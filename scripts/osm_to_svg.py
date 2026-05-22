@@ -73,7 +73,7 @@ def fetch_osm(south, west, north, east):
     data = urllib.parse.urlencode({"data": query}).encode("utf-8")
     print(f"Henter OSM-data for bounds ({south},{west})→({north},{east})...", file=sys.stderr)
     req = urllib.request.Request(OVERPASS_URL, data=data,
-                                headers={"User-Agent": "kommunekart-svg/1.0"})
+                                headers={"User-Agent": "by-kart-bygger/1.0"})
     with urllib.request.urlopen(req, timeout=90) as resp:
         result = json.loads(resp.read().decode("utf-8"))
     elements = result.get("elements", [])

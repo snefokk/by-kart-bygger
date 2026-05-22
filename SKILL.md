@@ -1,9 +1,9 @@
 ---
-name: kommunekart
+name: by-kart-bygger
 description: Lag et printbart A4-turistkart/bykart for en norsk kommune basert på et gammelt kart (foto/PDF) eller fra bunnen av. Skillen tolker det gamle kartet, verifiserer at bedriftene fortsatt er aktive via Brønnøysundregistrene, slår opp riktige koordinater i Google Maps, spør kommunen om tillegg, og bygger en ferdig HTML-fil klar til print. Bruk denne skillen når brukeren sier "lag bykart", "lag turistkart", "oppdater det gamle kartet vårt", "vi har et gammelt kart vi vil ha digitalt", "generer kommunekart for X", "lag printbart kart for kommunen", eller laster opp et bilde/PDF av et gammelt kart og vil ha det fornyet. Bruk også hvis noen ber om et POI-kart, næringskart, sentrumskart, eller A4-kart med bedrifter/severdigheter — selv om de ikke eksplisitt bruker ordet "skill" eller "kommunekart".
 ---
 
-# Kommunekart – printbart turist-/bykart for en norsk kommune
+# By-kart-bygger – printbart turist-/bykart for en norsk kommune
 
 Denne skillen tar deg gjennom hele prosessen med å lage et oppdatert, printbart A4-kart for en kommune: tolke et gammelt kart, verifisere at bedriftene fortsatt finnes, plassere dem riktig, og bygge HTML-en.
 
@@ -35,15 +35,17 @@ Ikke hopp over trinn — selv om brukeren virker utålmodig, vil verifiserings­
 
 ## Trinn 1: Samle utgangspunktet
 
-Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gammelt kart (bilde/PDF) i `/Users/rigmorberthier/Library/Application Support/Claude/local-agent-mode-sessions/d230d408-12ad-441a-ba87-0d4b20569e86/c91a7d9d-58c0-468f-b4fa-24eb7854e067/local_3a677f86-b9aa-48d6-ad6f-ac30430602c1/uploads/` eller referert det i meldingen.
+Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gammelt kart (bilde/PDF) som vedlegg i meldingen, eller referert til en lokal fil.
 
 **Hvis det er et gammelt kart**:
+
 - For PDF: bruk `pdf`-skillen til å konvertere til bilder eller hent ut tekst først
 - For bilde: les bildet direkte med Read-verktøyet (modellen kan se bilder native)
 - Identifiser alle POIs (Points of Interest): bedrifter, severdigheter, overnatting, spisesteder, butikker, museer
 - Forsøk å lese kategori, navn og posisjon for hvert punkt
 
 **Hvis det ikke er et gammelt kart**:
+
 - Spør brukeren via AskUserQuestion hvilke type punkter de vil ha med (kategorier) og om de har en liste
 - Eller spør om navnet på kommunen og foreslå at du kan starte fra Google Maps + lokal næringsforening
 
@@ -74,6 +76,7 @@ python3 scripts/brreg_lookup.py "Vadsø Hotell" --kommune Vadsø
 **VIKTIG:** BRREG `forretningsadresse` er **juridisk adresse** — ofte regnskapsfører, hjemadresse, eller hovedkontor. Den er IKKE nødvendigvis besøksadressen. Bruk aldri BRREG-adresser som koordinatkilde for kartet — det er Trinn 3 sin jobb (Google Maps).
 
 Scriptet returnerer JSON med:
+
 - `funnet: true/false` — om bedriften finnes i registeret
 - `aktiv: true/false` — om den er aktiv (ikke slettet, ikke konkurs, ikke under avvikling)
 - `navn_offisielt` — registrert navn (kan avvike fra kallenavnet)
@@ -82,6 +85,7 @@ Scriptet returnerer JSON med:
 - `slettedato` — hvis slettet, dato for sletting
 
 **Behandling av resultater**:
+
 - `aktiv: true` → behold punktet
 - `aktiv: false` (slettet/konkurs) → flagg for fjerning, vis brukeren listen til slutt så de kan bekrefte
 - `funnet: false` → kan være enkeltpersonforetak under privat navn, eller ikke-næring. Flagg som «trenger manuell sjekk» men ikke fjern automatisk
@@ -134,6 +138,7 @@ Etter at Google Maps-runden er ferdig, presenter en oppsummering:
 Sett `displayLat`/`displayLng` lik `lat`/`lng` som standard — overstyringer for visuell plassering håndteres senere ved tett klynging.
 
 For hvert POI, lagre også:
+
 - `adresse`: gateadresse for `spreadByAddress()` (POIs i samme bygg plasseres ved siden av hverandre)
 - `coord_kilde`: «Google Maps» / «OSM» / «BRREG» / «anslag»
 - `coord_note`: kort beskrivelse av hva som ble bekreftet
@@ -156,6 +161,7 @@ For HVERT punkt, gjør følgende:
    - Logg korreksjonen: `coord_note: "Korrigert fra 70.365/31.091 (sjøen) til 70.3639/31.0946 (verifisert Google Maps)"`
 
 **Typiske feil du skal fange:**
+
 - Koordinater med for få desimaler (f.eks. `70.365, 31.091`) — disse er ofte avrundet og havner feil
 - Koordinater kopiert fra feil kilde (BRREG-adresse vs. besøksadresse)
 - Koordinater fra et gammelt kart som var unøyaktige i utgangspunktet
@@ -168,6 +174,7 @@ For HVERT punkt, gjør følgende:
 **Før du bygger kartet, kjør en automatisk sjekk for punkter med identiske koordinater.** Bruk et enkelt Python-script som grupperer alle punkter etter `(lat, lng)` og rapporterer grupper med 2+ punkter.
 
 Identiske koordinater kan bety:
+
 - **Samme bygg** — f.eks. et kjøpesenter med flere butikker, eller en bygning med hotell + galleri + treningssenter. Da er koordinatene riktige, og `spreadByAddress()` i templaten fanner dem ut visuelt. Logg som bekreftet.
 - **Lat/lng kopiert fra et annet punkt** — en vanlig feil når noen legger inn data manuelt og glemmer å oppdatere koordinatene. Slå opp hvert punkt individuelt i Google Maps for å verifisere.
 - **Standardverdi / placeholder** — f.eks. `0, 0` eller kommunesenteret. Disse MÅ rettes.
@@ -175,17 +182,19 @@ Identiske koordinater kan bety:
 **Fremgangsmåte:**
 
 1. Kjør duplikat-sjekken:
-```python
-coords = {}
-for p in places:
+   
+   ```python
+   coords = {}
+   for p in places:
     key = (p['lat'], p['lng'])
     coords.setdefault(key, []).append(p)
-for key, group in coords.items():
+   for key, group in coords.items():
     if len(group) > 1:
         print(f"DUPLIKAT {key}: {[p['name'] for p in group]}")
-```
+   ```
 
 2. For hver duplikat-gruppe, spør deg selv: **er det sannsynlig at disse er i samme bygg?**
+   
    - «Vardø Motell» + «Galleri Luna» + «Treningssenter» → kanskje samme bygningskompleks, men sjekk i Google Maps
    - «Vitusapotek» + «Strandgata Blomster» → sannsynligvis naboer i samme handlegate, men sjekk
    - «Rema 1000» + «Vardøhus festning» → helt usannsynlig — en av dem er feil
@@ -220,17 +229,18 @@ Spør brukeren om område-titler («Vadsø sentrum», «Vestre Jakobselv», osv.
 
 **Tommelfingerregel for size-thresholds**:
 
-| Hovedklynge (POI-bbox) | Render-modus | Begrunnelse |
-|---|---|---|
-| < ~1 km diameter, alle POIs i sentrum | `single_map: true` | Tettstedet er så lite at alt passer i ett kart ved zoom 16. Eksempel: Båtsfjord. |
-| 1–3 km, POIs spredt over et større område med viktige punkter utenfor sentrum | overview + inset | Viktige severdigheter (festninger, memorialer, utsiktspunkter) som ligger utenfor sentrum må vises ordentlig — ikke bare som en pil. Eksempel: Vardø med Vardøhus festning, Steilneset Memorial, Skagen. |
-| > 3 km (flere tettsteder) | flere sider | Bruk én side per tettsted. |
+| Hovedklynge (POI-bbox)                                                        | Render-modus       | Begrunnelse                                                                                                                                                                                              |
+| ----------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| < ~1 km diameter, alle POIs i sentrum                                         | `single_map: true` | Tettstedet er så lite at alt passer i ett kart ved zoom 16. Eksempel: Båtsfjord.                                                                                                                         |
+| 1–3 km, POIs spredt over et større område med viktige punkter utenfor sentrum | overview + inset   | Viktige severdigheter (festninger, memorialer, utsiktspunkter) som ligger utenfor sentrum må vises ordentlig — ikke bare som en pil. Eksempel: Vardø med Vardøhus festning, Steilneset Memorial, Skagen. |
+| > 3 km (flere tettsteder)                                                     | flere sider        | Bruk én side per tettsted.                                                                                                                                                                               |
 
 **VIKTIG: Velg overview+inset når viktige POIs ellers bare ville blitt piler.** En pilmarkør ved kanten sier «dette finnes der borte» — men for en festning, et memorial, eller en annen hovedattraksjon er det ikke godt nok. Brukeren trenger å se disse på et ordentlig kart. Bruk `single_map` bare når ALLE viktige POIs faktisk passer innenfor synsfeltet ved zoom 16.
 
 Beregn POI-bbox SLIK at outliers (et hotell 5 km utenfor sentrum, en flyplass, en parkeringsplass i kommunegrensen) ikke teller. I `single_map`-modus oppdager templaten automatisk hvilke POIs som er utenfor synsfeltet og rendrer dem som pilmarkører ved kanten — du trenger IKKE sette `arrow` manuelt.
 
 Når du velger `single_map`-modus:
+
 - Sett `area.single_map: true` i config-JSON
 - Kartet bruker **fast zoom 16.0** (Vadsø inset-standard) — dette gir konsistente, lesbare gatenavn på tvers av alle kommuner
 - **Auto-rotasjon**: templaten prøver alle vinkler ±90° fra nord og velger den som gir flest POIs innenfor synsfeltet. Sett `area.rotation` for å overstyre (grader med klokken fra nord)
@@ -272,6 +282,7 @@ Målet med innsettet er å vise **flest mulig POIs** ved zoom 16 med lesbare gat
 6. Gjenta fra steg 2 med oppdatert S til ingen enkelt-punkt gir >30 % krymping.
 
 **Konkret eksempel — Berlevåg:**
+
 - Opprinnelig inset inkluderte punkt 4, 5, 6, 9 (Motell, Pensjonat, Kvitbrakka, Havnemuseum) og punkt 10 (Berlevåg kirke).
 - Kirka (10) lå ~200 m nord for resten og dro bounding-boxen utover slik at punktene 4, 5, 6, 9 havnet utenfor synsfeltet.
 - **Feil løsning**: Fjerne 4, 5, 6, 9 fra innsettet. Da mister man viktige sentrumspunkter.
@@ -319,6 +330,7 @@ Config-felter for `single_map`-modus:
 ### Trinn 5d: Nord-pil og målestokk
 
 Alle kart får automatisk:
+
 - **Nord-pil** i øvre høyre hjørne — beregnes fra Leaflets projeksjon slik at den er korrekt selv med roterte kart. Bruker `--brand-accent`-fargen.
 - **Målestokk-bar** i nedre venstre hjørne — viser avstand i meter/km basert på faktisk zoom-nivå.
 
@@ -327,11 +339,13 @@ Alle kart får automatisk:
 Spør brukeren hvilken visuell stil de vil ha:
 
 **Alternativ A: Hent fra kommunens nettside (standard)**
+
 - Brukeren oppgir URL (f.eks. kommunens nettside eller næringsforeningens)
 - Bruk Claude in Chrome til å navigere til nettsiden og hent ut branding **automatisk** med JavaScript:
 
 **Steg 1: Hent font**
 Kjør dette i nettleseren via `javascript_tool`:
+
 ```javascript
 // Sjekk for Google Fonts-lenker
 const fontLinks = Array.from(document.querySelectorAll('link[href*="fonts.google"]')).map(l => l.href);
@@ -339,12 +353,14 @@ const fontLinks = Array.from(document.querySelectorAll('link[href*="fonts.google
 const bodyFont = getComputedStyle(document.body).fontFamily;
 JSON.stringify({ fontLinks, bodyFont });
 ```
+
 - Hvis det finnes en Google Fonts-lenke → bruk den som `font_url` og fontnavnet som `font_family`
 - Hvis det ikke finnes en Google Fonts-lenke → sjekk om `bodyFont` inneholder en kjent webfont (Open Sans, Roboto, Lato, etc.) og generer en tilsvarende Google Fonts URL
 - Hvis bare system-fonts → bruk system-ui stack og dropp `font_url`
 
 **Steg 2: Hent farger**
 Kjør dette i nettleseren:
+
 ```javascript
 const body = getComputedStyle(document.body);
 // Finn primærfarge: typisk header/nav bakgrunn (den mørke fargen)
@@ -367,6 +383,7 @@ JSON.stringify({
   text: body.color
 });
 ```
+
 - `primary` → header/nav-bakgrunn (den dominerende mørke fargen)
 - `secondary` → side-bakgrunn (typisk lys)
 - `accent` → se etter knapper, logofarger, eller lenkefarger som skiller seg ut. Hvis du ikke finner noen tydelig accent, bruk en komplementærfarge til primary.
@@ -378,6 +395,7 @@ RGB-verdier fra `getComputedStyle` er på formen `rgb(15, 47, 111)` — konverte
 **VIKTIG: Bruk ALLTID fonten fra den oppgitte nettsiden.** Ikke hardkod Quicksand eller noen annen font. Hvert kart skal ha fonten som matcher kommunens/oppdragsgiverens nettside.
 
 **Alternativ B: Snefokk-generisk** (bare hvis brukeren ikke har en nettside)
+
 - Bruk `templates/snefokk-generisk/style.json`
 - Dette gir en pen, nøytral grønn-cream-stil
 
@@ -411,6 +429,7 @@ Templaten legger på et subtilt sepia/desaturerings-filter (`sepia(0.22) saturat
 **VIKTIG: Ikke bruk SVG-pipelinen (`osm_to_svg.py`).** Tidligere forsøk viste at egenproduserte SVG-kart har problemer med kystlinje-polygoner (spesielt for øyer), vann/land-inversjon, og uleselige gatenavn ved zoom 16. Leaflet-fliser løser alle disse problemene fordi OSM sin rendering er optimalisert for hvert zoom-nivå.
 
 Fordeler med tile-basert tilnærming:
+
 - Korrekt kystlinje og vann automatisk (ingen polygon-problemer)
 - Lesbare gatenavn ved alle zoom-nivåer (OSM-rendering)
 - Retina-støtte via `{r}` i tile-URL
@@ -418,6 +437,7 @@ Fordeler med tile-basert tilnærming:
 - Konsistent utseende på tvers av kommuner
 
 Ulempe:
+
 - Krever internettforbindelse ved første lasting (flisene caches i nettleseren)
 - Ikke fullt selvstendig HTML-fil (avhenger av CARTO tile-server)
 
@@ -480,6 +500,7 @@ python3 scripts/build_html.py \
 ```
 
 Templaten håndterer:
+
 - Print-CSS (A4 portrett, 10 mm margins, page-break mellom områder)
 - **Leaflet-kart med CARTO Voyager-tiles** (OSM native stiler, lesbare gatenavn)
 - Fast-skala-motor med adaptiv zoom (mål 16.0, min 15.0) og auto-rotasjon
@@ -505,20 +526,25 @@ Kopier den endelige HTML-en til workspace-mappa brukeren har valgt, og presenter
 ## Spesialtilfeller
 
 ### Markører som ligger utenfor kartet
+
 I `single_map`-modus håndteres dette **automatisk**: templaten sjekker pikselbasert om hver POI er synlig, og plasserer usynlige POIs som pilmarkører (↑↓←→) ved nærmeste kant. Pilene peker mot den faktiske posisjonen, og tooltip-en viser avstand i km. Kantmarkørene de-overlappes automatisk.
 
 I overview+inset-modus kan du fortsatt bruke `arrow: 'right'` etc. manuelt, men for de fleste tilfeller er `single_map: true` bedre.
 
 ### Markører som overlapper
+
 `spreadByAddress`-funksjonen grupperer POIs med identiske koordinater i en sirkel. `spreadOverlapping`-funksjonen skyver deretter gjenværende overlapp fra hverandre. Begge kjøres automatisk.
 
 ### Punkter helt på kanten av et inset-kart
+
 Bruk `force_inset_ids` / `force_main_ids` i inset-config for å overstyre hvilket kart punktet havner på. Se **Inset-optimalisering** i Trinn 5b for algoritmen som identifiserer hvilke punkter som bør flyttes — fjern alltid outlieren, aldri clusteret.
 
 ### Rotasjon som gir for mange POIs utenfor
+
 Hvis auto-rotasjonen ikke gir godt nok resultat (f.eks. en veldig lang, smal by), kan du overstyre med `area.rotation: <grader>`. Test visuelt og justér.
 
 ### Adresse-markering (Airbnb / utleie)
+
 Malen har en innebygd adresse-funksjon som lar sluttbrukere (f.eks. Airbnb-verter) markere sin egen adresse på kartet før de printer. Funksjonen:
 
 - **Adressefelt** øverst på siden (under print-knappene) med «Marker din adresse»-label og «Vis på kart»-knapp
@@ -534,6 +560,7 @@ Funksjonen krever ingen konfigurasjon — den er alltid tilgjengelig i malen. Ka
 ## Referansefiler
 
 Se også:
+
 - `references/brreg-api.md` — detaljer om Brønnøysund-API-et
 - `references/checklist.md` — sjekkliste du kan bruke til å holde tritt
 - `templates/snefokk-generisk/style.json` — fallback-branding

@@ -1,4 +1,4 @@
-# Sjekkliste for kommunekart
+# Sjekkliste for by-kart-bygger
 
 Bruk denne listen for å holde tritt mens du går gjennom flyten.
 
