@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="__FONT_URL__">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  /* ============================================================
+     KOMMUNEKART – generert mal med fast-skala motor
+     Basert på vardo-bykart layouten (ren, åpen, med padding).
+     Fast-skala zoom 16 + auto-rotasjon + pikselbasert synlighet.
+     ============================================================ */
+  :root {
+    --brand-dark:    __COLOR_PRIMARY__;
+    --brand-cream:   __COLOR_SECONDARY__;
+    --brand-accent:  __COLOR_ACCENT__;
+    --brand-text:    __COLOR_TEXT__;
+    --brand-font:    __FONT_FAMILY__;
+
+    --cat-eat:       #C0392B;
+    --cat-stay:      #2980B9;
+    --cat-museum:    #8E44AD;
+    --cat-shop:      #E67E22;
+    --cat-beauty:    #D81B60;
+    --cat-activity:  #27AE60;
+    --cat-other:     #555555;
+  }
+
+  *  { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--brand-cream);
+    font-family: var(--brand-font);
+    color: var(--brand-text);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* A4 portrett: 210 x 297 mm, 10 mm margins */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm;
+    margin: 5mm auto;
+    background: var(--brand-cream);
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+  }
+  .page:last-of-type { page-break-after: auto; }
+
+  /* Header */
+  .header {
+    background: transparent;
+    color: var(--brand-dark);
+    padding: 3mm 2mm 3mm;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 3mm;
+    margin-bottom: 2mm;
+    border-bottom: 0.5pt solid var(--brand-dark);
+  }
+  .header .title-block {
+    display: flex;
+    align-items: baseline;
+    gap: 3mm;
+  }
+  .header .title-top {
+    font-family: 'Newsreader', serif;
+    font-size: 26pt;
+    font-weight: 700;
+    font-optical-sizing: auto;
+    letter-spacing: 2px;
+  }
+  .header .title-bottom {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 9pt;
+    font-weight: 400;
+    opacity: 0.5;
+    letter-spacing: 0.5px;
+  }
+  .header img.logo {
+    height: 12mm;
+  }
+
+  /* Body: kart + legend */
+  .body-grid {
+    display: grid;
+    grid-template-columns: 132mm 1fr;
+    gap: 4mm;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .map-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3mm;
+  }
+  .map-container {
+    flex: 1 1 0;
+    min-height: 60mm;
+    border: 1px solid var(--brand-dark);
+    border-radius: 1.5mm;
+    overflow: hidden;
+    position: relative;
+    background: #e6e6e6;
+  }
+  .map-container.inset-container {
+    flex: 1 1 0;
+  }
+  .inset-corner-label {
+    position: absolute;
+    top: 1.5mm; left: 1.5mm;
+    z-index: 500;
+    background: var(--brand-accent);
+    color: white;
+    font-size: 7pt; font-weight: 700;
+    padding: 0.6mm 2mm;
+    border-radius: 1mm;
+    letter-spacing: 0.3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .map-container .leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: #e6e6e6;
+    font-family: var(--brand-font);
+  }
+  /* Marker-overflow: piler stikker ut fra markøren */
+  .leaflet-marker-pane, .leaflet-marker-icon {
+    overflow: visible !important;
+  }
+  .area-title {
+    background: var(--brand-dark);
+    color: var(--brand-cream);
+    font-size: 10pt;
+    font-weight: 700;
+    padding: 1.5mm 3mm;
+    border-radius: 1mm;
+  }
+
+  /* Nord-pil */
+  .north-arrow {
+    position: absolute;
+    top: 3mm; right: 3mm;
+    z-index: 500;
+    width: 11mm; height: 11mm;
+    background: white;
+    border: 1px solid var(--brand-dark);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--brand-font);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .north-arrow .arrow {
+    font-size: 12pt; line-height: 1;
+    color: var(--brand-accent);
+    font-weight: 800; margin-top: -1mm;
+  }
+  .north-arrow .n-label {
+    font-size: 7pt; line-height: 1;
+    color: var(--brand-dark);
+    font-weight: 700; letter-spacing: 0.3px;
+    margin-bottom: 0.5mm;
+  }
+
+  /* Scale bar */
+  .scale-bar {
+    position: absolute;
+    bottom: 3mm; left: 3mm;
+    z-index: 500;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--brand-dark);
+    padding: 1.5mm 3mm;
+    font-size: 6.5pt; font-weight: 700;
+    display: flex; align-items: center; gap: 2mm;
+  }
+  .scale-bar .bar {
+    display: inline-block; height: 3px;
+    background: linear-gradient(to right, var(--brand-dark) 50%, white 50%);
+    border: 1px solid var(--brand-dark);
+  }
+
+  /* Legend */
+  .legend-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3mm;
+  }
+  .legend-category {
+    break-inside: avoid;
+  }
+  .legend-category h3 {
+    margin: 0 0 1mm 0;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: var(--brand-dark);
+    border-bottom: 1px solid var(--brand-dark);
+    padding-bottom: 0.5mm;
+  }
+  .legend-category ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    columns: 2;
+    column-gap: 3mm;
+    font-size: 7pt;
+    line-height: 1.25;
+  }
+  .legend-category ol li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2mm;
+    margin-bottom: 0.5mm;
+    break-inside: avoid;
+  }
+  .legend-num {
+    flex: 0 0 auto;
+    min-width: 4mm;
+    height: 4mm;
+    border-radius: 50%;
+    color: white;
+    font-size: 6pt;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1mm;
+  }
+  .legend-num.cat-eat       { background: var(--cat-eat); }
+  .legend-num.cat-stay      { background: var(--cat-stay); }
+  .legend-num.cat-museum    { background: var(--cat-museum); }
+  .legend-num.cat-shop      { background: var(--cat-shop); }
+  .legend-num.cat-beauty    { background: var(--cat-beauty); }
+  .legend-num.cat-activity  { background: var(--cat-activity); }
+  .legend-num.cat-other     { background: var(--cat-other); }
+
+  /* «Du er her» boks i legend */
+  .addr-legend {
+    display: none;
+    border: 1.5px solid var(--brand-accent);
+    border-radius: 1.5mm;
+    padding: 2mm 3mm;
+    margin-top: 1mm;
+    background: rgba(255,255,255,0.5);
+  }
+  .addr-legend.visible { display: block; }
+  .addr-legend-title {
+    font-size: 8pt; font-weight: 700;
+    color: var(--brand-accent);
+    margin: 0 0 0.5mm 0;
+    display: flex; align-items: center; gap: 1.5mm;
+  }
+  .addr-legend-title .addr-pin {
+    width: 4mm; height: 4mm;
+    background: var(--brand-accent);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border: 0.8px solid white;
+    box-shadow: 0 0 0 0.3px rgba(0,0,0,0.2);
+  }
+  .addr-legend-title .addr-pin span {
+    transform: rotate(45deg);
+    font-size: 5pt; color: white; line-height: 1;
+  }
+  .addr-legend-addr {
+    font-size: 7.5pt; font-weight: 500;
+    color: var(--brand-text);
+    margin: 0;
+    padding-left: 5.5mm;
+  }
+
+  .qr-box {
+    margin-top: auto;
+    align-self: center;
+    text-align: center;
+    font-size: 7pt;
+  }
+  .qr-box canvas { display: block; margin: 0 auto 1mm; }
+
+  /* Snefokk footer */
+  .snefokk-footer {
+    text-align: center;
+    padding: 1.5mm 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5mm;
+  }
+  .snefokk-footer svg {
+    height: 7mm;
+    width: auto;
+    opacity: 0.3;
+  }
+  .snefokk-footer a {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 6.5pt;
+    color: #999;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+  }
+
+  /* POI-markører */
+  .poi-marker {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    color: white;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid white;
+    box-shadow: 0 0 0 0.5px rgba(0,0,0,0.3);
+  }
+  .poi-marker.cat-eat       { background: var(--cat-eat); }
+  .poi-marker.cat-stay      { background: var(--cat-stay); }
+  .poi-marker.cat-museum    { background: var(--cat-museum); }
+  .poi-marker.cat-shop      { background: var(--cat-shop); }
+  .poi-marker.cat-beauty    { background: var(--cat-beauty); }
+  .poi-marker.cat-activity  { background: var(--cat-activity); }
+  .poi-marker.cat-other     { background: var(--cat-other); }
+
+  /* Pil-markører — alle fire retninger */
+  .poi-marker.arrow-right  { position: relative; overflow: visible; }
+  .poi-marker.arrow-right::after {
+    content: "\2192"; position: absolute; left: 100%; top: 50%;
+    transform: translateY(-50%); margin-left: 2px;
+    font-size: 14px; font-weight: 800;
+    color: var(--brand-dark);
+    text-shadow: 0 0 2px white, 0 0 3px white;
+  }
+  .poi-marker.arrow-left  { position: relative; overflow: visible; }
+  .poi-marker.arrow-left::after {
+    content: "\2190"; position: absolute; right: 100%; top: 50%;
+    transform: translateY(-50%); margin-right: 2px;
+    font-size: 14px; font-weight: 800;
+    color: var(--brand-dark);
+    text-shadow: 0 0 2px white, 0 0 3px white;
+  }
+  .poi-marker.arrow-up { position: relative; overflow: visible; margin-top: 14px; }
+  .poi-marker.arrow-up::after {
+    content: "\2191"; position: absolute; bottom: 100%; left: 50%;
+    transform: translateX(-50%); margin-bottom: 2px;
+    font-size: 14px; font-weight: 800;
+    color: var(--brand-dark);
+    text-shadow: 0 0 2px white, 0 0 3px white;
+  }
+  .poi-marker.arrow-down { position: relative; overflow: visible; margin-bottom: 14px; }
+  .poi-marker.arrow-down::after {
+    content: "\2193"; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%); margin-top: 2px;
+    font-size: 14px; font-weight: 800;
+    color: var(--brand-dark);
+    text-shadow: 0 0 2px white, 0 0 3px white;
+  }
+
+  /* Varm opp kartflisene — inspirert av vintage Budapest-stil */
+  .leaflet-tile-pane {
+    filter: sepia(0.22) saturate(0.7) brightness(1.03) hue-rotate(-10deg);
+  }
+
+  .leaflet-control-zoom { display: none !important; }
+  .leaflet-control-attribution {
+    font-size: 5.5pt !important;
+    background: rgba(255,255,255,0.85) !important;
+  }
+
+  .leaflet-tooltip {
+    z-index: 1000 !important;
+    background: white;
+    border: 1px solid var(--brand-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    font-size: 8pt;
+    padding: 3px 7px;
+    color: var(--brand-text);
+  }
+  .leaflet-pane.leaflet-tooltip-pane { z-index: 1000 !important; }
+
+  .leaflet-interactive.inset-frame {
+    stroke: var(--brand-accent);
+    stroke-width: 2.5;
+    fill: var(--brand-accent);
+    fill-opacity: 0.06;
+    stroke-dasharray: 4 3;
+  }
+
+  /* Layout-varianter */
+  .body-grid.few-poi-layout {
+    grid-template-columns: 160mm 1fr;
+  }
+  .few-poi-layout .legend-category ol {
+    columns: 1;
+  }
+
+  /* Debug info (screen only) */
+  .debug-info {
+    position: absolute;
+    bottom: 12mm; left: 3mm;
+    z-index: 600;
+    background: rgba(0,0,0,0.75);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 8pt;
+    padding: 2mm 3mm;
+    border-radius: 2mm;
+    max-width: 60mm;
+    line-height: 1.4;
+  }
+
+  /* Print-knapper */
+  .print-toolbar {
+    max-width: 210mm; margin: 0 auto;
+    padding: 10px 20px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-family: var(--brand-font); font-size: 13px; color: #333;
+  }
+  .print-toolbar button {
+    background: var(--brand-dark); color: white; border: 0;
+    border-radius: 4px; padding: 8px 14px;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  .print-toolbar button:hover { filter: brightness(1.1); }
+  .print-toolbar button.bw { background: #222; }
+  .print-toolbar .hint { color: #666; font-size: 12px; flex: 1; }
+
+  body.bw-mode .page,
+  body.bw-mode .map-container {
+    filter: grayscale(100%) contrast(1.05);
+  }
+
+  /* Adresse-verktøy for Airbnb/utleie */
+  .address-toolbar {
+    max-width: 210mm; margin: 0 auto;
+    padding: 8px 20px 12px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    font-family: var(--brand-font); font-size: 13px; color: #333;
+    border-top: 1px solid #ddd;
+  }
+  .address-toolbar label {
+    font-weight: 600; font-size: 13px; white-space: nowrap;
+  }
+  .address-toolbar .addr-icon { font-size: 16px; }
+  .address-toolbar input[type="text"] {
+    flex: 1; min-width: 180px;
+    padding: 7px 10px; border: 1.5px solid #bbb; border-radius: 4px;
+    font-family: var(--brand-font); font-size: 13px;
+  }
+  .address-toolbar input[type="text"]:focus {
+    outline: none; border-color: var(--brand-dark);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  }
+  .address-toolbar button {
+    background: var(--brand-accent); color: white; border: 0;
+    border-radius: 4px; padding: 7px 14px;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .address-toolbar button:hover { filter: brightness(1.1); }
+  .address-toolbar button.remove-btn {
+    background: #999; padding: 7px 10px;
+  }
+  .address-toolbar .addr-status {
+    font-size: 12px; color: #666; width: 100%;
+  }
+  .address-toolbar .addr-status.error { color: #c0392b; }
+  .address-toolbar .addr-status.success { color: #27ae60; }
+
+  /* Custom adresse-markør (stjerne/hus) */
+  .custom-addr-marker {
+    width: 28px; height: 28px;
+    background: var(--brand-accent);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2.5px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .custom-addr-marker .addr-star {
+    transform: rotate(45deg);
+    font-size: 14px; color: white; line-height: 1;
+  }
+
+  @media print {
+    .address-toolbar { display: none !important; }
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: white; margin: 0; }
+    .print-toolbar { display: none !important; }
+    .debug-info { display: none !important; }
+    .page {
+      margin: 0 !important;
+      width: 210mm !important;
+      height: 297mm !important;
+      min-height: 297mm !important;
+      max-height: 297mm !important;
+      overflow: hidden !important;
+      box-shadow: none !important;
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+    }
+    .page:last-of-type { page-break-after: auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="print-toolbar" id="printToolbar">
+  <button onclick="printColor()">Print farger</button>
+  <button class="bw" onclick="printBW()">Print svart/hvitt</button>
+  <span class="hint">Tips: huk av «Bakgrunnsgrafikk» i print-dialogen for å beholde fargene.</span>
+</div>
+<div class="address-toolbar" id="addressToolbar">
+  <label for="addrInput"><span class="addr-icon">📍</span> Marker din adresse:</label>
+  <input type="text" id="addrInput" placeholder="F.eks. Strandgata 5">
+  <button onclick="geocodeAddress()">Vis på kart</button>
+  <button class="remove-btn" onclick="removeAddress()" style="display:none" id="addrRemoveBtn">✕ Fjern</button>
+  <div class="addr-status" id="addrStatus"></div>
+</div>
+
+<div id="root"></div>
+
+<script>
+const CONFIG = __CONFIG_JSON__;
+
+/* ============================================================
+   FAST-SKALA MOTOR
+   Referanse-zoom: 16.0 (Vadsø inset-standard)
+   Auto-rotasjon: ±90° brute-force for maks POIs i synsfelt
+   Pikselbasert synlighetssjekk for roterte kart
+   ============================================================ */
+const REFERENCE_ZOOM = 16.0;
+
+// Global kartregister for adresse-markering
+const MAP_REGISTRY = { maps: [], addrMarkers: [] };
+
+// Retina-klare tiles
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const TILE_URL_NOLABELS = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+const TILE_ATTR = '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a>';
+
+const STATIC_MAP_OPTS = {
+  zoomControl: false, scrollWheelZoom: false, dragging: false,
+  doubleClickZoom: false, boxZoom: false, keyboard: false,
+  touchZoom: false, attributionControl: false,
+};
+
+const RAT_LAT = 111000;
+const RAT_LNG = 111000 * Math.cos(70.0 * Math.PI / 180);
+
+/* ============================================================
+   ROTATION: prøv alle vinkler ±90°, velg den med flest POIs
+   ============================================================ */
+function findBestBearing(places, containerW_m, containerH_m) {
+  if (places.length < 2) return 0;
+  const cLat = places.reduce((s,p) => s + p.lat, 0) / places.length;
+  const cLng = places.reduce((s,p) => s + p.lng, 0) / places.length;
+  const pts = places.map(p => ({
+    x: (p.lng - cLng) * RAT_LNG,
+    y: (p.lat - cLat) * RAT_LAT,
+  }));
+  const margin = 15;
+  const halfW = (containerW_m / 2) - margin;
+  const halfH = (containerH_m / 2) - margin;
+  let bestBearing = 0, bestCount = -1, bestArea = Infinity;
+  const angles = [];
+  for (let d = -90; d <= 90; d++) angles.push(d < 0 ? d + 360 : d);
+  for (const deg of angles) {
+    const rad = deg * Math.PI / 180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    let count = 0, minRx = Infinity, maxRx = -Infinity, minRy = Infinity, maxRy = -Infinity;
+    for (const p of pts) {
+      const rx = p.x * cos + p.y * sin;
+      const ry = -p.x * sin + p.y * cos;
+      if (Math.abs(rx) <= halfW && Math.abs(ry) <= halfH) {
+        count++;
+        if (rx < minRx) minRx = rx; if (rx > maxRx) maxRx = rx;
+        if (ry < minRy) minRy = ry; if (ry > maxRy) maxRy = ry;
+      }
+    }
+    const area = count > 0 ? (maxRx - minRx) * (maxRy - minRy) : Infinity;
+    if (count > bestCount || (count === bestCount && area < bestArea)) {
+      bestCount = count; bestBearing = deg; bestArea = area;
+    }
+  }
+  console.log(`[rotation] best bearing: ${bestBearing}° → ${bestCount}/${places.length} POIs visible`);
+  return bestBearing;
+}
+
+function getContainerMeters() {
+  const mmToPx = 3.7795;
+  const mpp = 156543.03 * Math.cos(70.0 * Math.PI / 180) / Math.pow(2, REFERENCE_ZOOM);
+  // 132mm kart-kolonne i overview+inset layout
+  const containerW_px = 132 * mmToPx;
+  const containerH_px = 250 * mmToPx;
+  return { w_m: containerW_px * mpp, h_m: containerH_px * mpp, mpp };
+}
+
+/* ============================================================
+   HELPER FUNCTIONS
+   ============================================================ */
+function makeIcon(p) {
+  let arrow = '';
+  let iconSize = [18, 18];
+  let iconAnchor = [9, 9];
+  if (p.arrow === 'right') {
+    arrow = ' arrow-right'; iconSize = [42, 18]; iconAnchor = [9, 9];
+  } else if (p.arrow === 'left') {
+    arrow = ' arrow-left'; iconSize = [42, 18]; iconAnchor = [33, 9];
+  } else if (p.arrow === 'up') {
+    arrow = ' arrow-up'; iconSize = [18, 32]; iconAnchor = [9, 23];
+  } else if (p.arrow === 'down') {
+    arrow = ' arrow-down'; iconSize = [18, 32]; iconAnchor = [9, 9];
+  }
+  return L.divIcon({
+    className: '',
+    html: `<div class="poi-marker cat-${p.cat}${arrow}" title="${p.name || ''}">${p.id}</div>`,
+    iconSize, iconAnchor,
+  });
+}
+
+function spreadOverlapping(places, minDistMeters, iterations) {
+  places.forEach(p => {
+    if (p.displayLat == null) p.displayLat = p.lat;
+    if (p.displayLng == null) p.displayLng = p.lng;
+  });
+  for (let iter = 0; iter < iterations; iter++) {
+    let moved = false;
+    for (let i = 0; i < places.length; i++) {
+      for (let j = i + 1; j < places.length; j++) {
+        const a = places[i], b = places[j];
+        const dx = (b.displayLng - a.displayLng) * RAT_LNG;
+        const dy = (b.displayLat - a.displayLat) * RAT_LAT;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < minDistMeters && dist > 0) {
+          const push = (minDistMeters - dist) / 2;
+          const nx = dx / dist, ny = dy / dist;
+          a.displayLng -= (push * nx) / RAT_LNG;
+          a.displayLat -= (push * ny) / RAT_LAT;
+          b.displayLng += (push * nx) / RAT_LNG;
+          b.displayLat += (push * ny) / RAT_LAT;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+}
+
+function spreadByAddress(places) {
+  const groups = {};
+  for (const p of places) {
+    const key = `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  }
+  const radiusLat = 0.00012, radiusLng = 0.00040;
+  for (const key in groups) {
+    const grp = groups[key];
+    if (grp.length < 2) continue;
+    const cLat = grp.reduce((s,p) => s + p.lat, 0) / grp.length;
+    const cLng = grp.reduce((s,p) => s + p.lng, 0) / grp.length;
+    grp.forEach((p, i) => {
+      const angle = (2 * Math.PI * i) / grp.length;
+      p.displayLat = cLat + radiusLat * Math.sin(angle);
+      p.displayLng = cLng + radiusLng * Math.cos(angle);
+    });
+  }
+}
+
+function isInsetPlace(p, inset) {
+  if (!inset) return false;
+  if (inset.force_main_ids && inset.force_main_ids.includes(p.id)) return false;
+  if (inset.force_inset_ids && inset.force_inset_ids.includes(p.id)) return true;
+  return L.latLngBounds(inset.bounds).contains([p.lat, p.lng]);
+}
+
+function addNorthArrow(containerId, map, places) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const arrow = document.createElement('div');
+  arrow.className = 'north-arrow';
+  arrow.innerHTML = '<div class="n-label">N</div><div class="arrow">&uarr;</div>';
+  container.appendChild(arrow);
+  setTimeout(() => {
+    if (!map || !map.latLngToContainerPoint) return;
+    const center = map.getCenter();
+    const np = L.latLng(center.lat + 0.001, center.lng);
+    const cp = map.latLngToContainerPoint(center);
+    const npp = map.latLngToContainerPoint(np);
+    const deg = Math.atan2(npp.x - cp.x, -(npp.y - cp.y)) * 180 / Math.PI;
+    arrow.style.transform = `rotate(${deg}deg)`;
+
+    // Kollisjon-sjekk: flytt nordpila hvis en markør eller label overlapper
+    if (places && places.length) {
+      const mapSize = map.getSize();
+      const arrowR = 22; // radius av nordpil-sirkelen i px (~11mm)
+      const margin = 12; // CSS margin (~3mm)
+      // Sjekk om containeren har en inset-corner-label (alltid top-left)
+      const hasLabel = !!container.querySelector('.inset-corner-label');
+      // Prøv hjørner: top-right, bottom-right, bottom-left, top-left (sist pga label)
+      const corners = [
+        { x: mapSize.x - margin - arrowR, y: margin + arrowR, css: 'top:3mm;right:3mm;bottom:auto;left:auto;', skipIfLabel: false },
+        { x: mapSize.x - margin - arrowR, y: mapSize.y - margin - arrowR, css: 'bottom:3mm;right:3mm;top:auto;left:auto;', skipIfLabel: false },
+        { x: margin + arrowR, y: mapSize.y - margin - arrowR, css: 'bottom:3mm;left:3mm;top:auto;right:auto;', skipIfLabel: false },
+        { x: margin + arrowR, y: margin + arrowR, css: 'top:3mm;left:3mm;bottom:auto;right:auto;', skipIfLabel: true },
+      ];
+      const minDist = arrowR + 14; // markør-ikon er ~12px radius
+      for (const corner of corners) {
+        if (corner.skipIfLabel && hasLabel) continue;
+        const hasCollision = places.some(p => {
+          const pt = map.latLngToContainerPoint([p.lat, p.lng]);
+          const dx = pt.x - corner.x, dy = pt.y - corner.y;
+          return Math.sqrt(dx*dx + dy*dy) < minDist;
+        });
+        if (!hasCollision) {
+          arrow.style.cssText += corner.css;
+          break;
+        }
+      }
+    }
+  }, 400);
+}
+
+function addScaleBar(containerId, mpp) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const barWidthPx = 80;
+  const barMeters = barWidthPx * mpp;
+  const nice = [10, 20, 25, 50, 100, 200, 250, 500, 1000];
+  let bestDist = nice[0];
+  for (const n of nice) {
+    if (Math.abs(n - barMeters) < Math.abs(bestDist - barMeters)) bestDist = n;
+  }
+  const actualWidth = bestDist / mpp;
+  const el = document.createElement('div');
+  el.className = 'scale-bar';
+  el.innerHTML = `<span class="bar" style="width:${actualWidth}px"></span><span>${bestDist >= 1000 ? (bestDist/1000) + ' km' : bestDist + ' m'}</span>`;
+  container.appendChild(el);
+}
+
+function makeVisibilityChecker(map) {
+  const mapSize = map.getSize();
+  return {
+    mapSize,
+    isOnScreen(lat, lng) {
+      const pt = map.latLngToContainerPoint([lat, lng]);
+      const margin = 10;
+      return pt.x >= -margin && pt.x <= mapSize.x + margin &&
+             pt.y >= -margin && pt.y <= mapSize.y + margin;
+    }
+  };
+}
+
+function placeEdgeMarkers(outsidePlaces, map, mapSize, centerLat, centerLng) {
+  const edgeMarkers = [];
+  const edgeMargin = 34;
+  for (const p of outsidePlaces) {
+    const pt = map.latLngToContainerPoint([p.lat, p.lng]);
+    const cx = Math.max(edgeMargin, Math.min(mapSize.x - edgeMargin, pt.x));
+    const cy = Math.max(edgeMargin, Math.min(mapSize.y - edgeMargin, pt.y));
+    edgeMarkers.push({ p, cx, cy, realPt: pt });
+  }
+  // De-overlap
+  const minEdgeDist = 24;
+  for (let iter = 0; iter < 50; iter++) {
+    let moved = false;
+    for (let i = 0; i < edgeMarkers.length; i++) {
+      for (let j = i + 1; j < edgeMarkers.length; j++) {
+        const a = edgeMarkers[i], b = edgeMarkers[j];
+        const dx = b.cx - a.cx, dy = b.cy - a.cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < minEdgeDist && dist > 0) {
+          const push = (minEdgeDist - dist) / 2;
+          const nx = dx / dist, ny = dy / dist;
+          a.cx -= push * nx; a.cy -= push * ny;
+          b.cx += push * nx; b.cy += push * ny;
+          const m = edgeMargin;
+          a.cx = Math.max(m, Math.min(mapSize.x - m, a.cx));
+          a.cy = Math.max(m, Math.min(mapSize.y - m, a.cy));
+          b.cx = Math.max(m, Math.min(mapSize.x - m, b.cx));
+          b.cy = Math.max(m, Math.min(mapSize.y - m, b.cy));
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  for (const em of edgeMarkers) {
+    const { p, cx, cy, realPt } = em;
+    const edgeLatLng = map.containerPointToLatLng([cx, cy]);
+    const dx = realPt.x - cx, dy = realPt.y - cy;
+    let arrow;
+    if (Math.abs(dx) > Math.abs(dy)) { arrow = dx > 0 ? 'right' : 'left'; }
+    else { arrow = dy > 0 ? 'down' : 'up'; }
+    const pp = { ...p, arrow };
+    const distX = (p.lng - centerLng) * RAT_LNG;
+    const distY = (p.lat - centerLat) * RAT_LAT;
+    const distKm = Math.sqrt(distX*distX + distY*distY) / 1000;
+    L.marker([edgeLatLng.lat, edgeLatLng.lng], { icon: makeIcon(pp) })
+      .bindTooltip(`<b>${p.id}.</b> ${p.name}<br><i>${distKm.toFixed(1)} km</i>`,
+        { direction: 'auto', offset: [0,-6] })
+      .addTo(map);
+  }
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderArea(area, areaIdx, root) {
+  const page = document.createElement('div');
+  page.className = 'page';
+
+  const header = document.createElement('div');
+  header.className = 'header';
+  let logoHtml = '';
+  if (CONFIG.brand.logo_url) logoHtml = `<img src="${CONFIG.brand.logo_url}" class="logo" alt="logo">`;
+  header.innerHTML = `
+    <div class="title-block">
+      <div class="title-top">${CONFIG.brand.tittel_topp}</div>
+      <div class="title-bottom">${CONFIG.brand.tittel_bunn}</div>
+    </div>
+    ${logoHtml}`;
+  page.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'body-grid';
+
+  const totalPoi = area.places.length;
+  const useFewPoiLayout = area.few_poi_layout !== undefined
+    ? area.few_poi_layout
+    : totalPoi <= 25;
+  if (useFewPoiLayout) body.classList.add('few-poi-layout');
+
+  const mapCol = document.createElement('div');
+  mapCol.className = 'map-col';
+
+  if (area.title) {
+    const areaTitle = document.createElement('div');
+    areaTitle.className = 'area-title';
+    areaTitle.textContent = area.title;
+    mapCol.appendChild(areaTitle);
+  }
+
+  const mapDiv = document.createElement('div');
+  mapDiv.className = 'map-container';
+  mapDiv.id = `map-${areaIdx}`;
+  mapCol.appendChild(mapDiv);
+
+  let insetDiv = null;
+  if (area.inset && !area.single_map) {
+    insetDiv = document.createElement('div');
+    insetDiv.className = 'map-container inset-container';
+    insetDiv.id = `map-inset-${areaIdx}`;
+    const cornerLabel = document.createElement('div');
+    cornerLabel.className = 'inset-corner-label';
+    cornerLabel.textContent = (area.inset.label || 'Detalj / Detail');
+    insetDiv.appendChild(cornerLabel);
+    mapCol.appendChild(insetDiv);
+  }
+
+  body.appendChild(mapCol);
+
+  const legendCol = document.createElement('div');
+  legendCol.className = 'legend-col';
+
+  const byCat = {};
+  for (const p of area.places) {
+    if (!byCat[p.cat]) byCat[p.cat] = [];
+    byCat[p.cat].push(p);
+  }
+  for (const cat of CONFIG.categories) {
+    if (!byCat[cat.id] || byCat[cat.id].length === 0) continue;
+    const sec = document.createElement('div');
+    sec.className = 'legend-category';
+    let labelHtml = `${cat.label_no}`;
+    if (cat.label_en) labelHtml += ` <span style="opacity:.7;font-weight:400">/ ${cat.label_en}</span>`;
+    sec.innerHTML = `<h3>${labelHtml}</h3><ol></ol>`;
+    const ol = sec.querySelector('ol');
+    for (const p of byCat[cat.id].sort((a,b) => a.id - b.id)) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="legend-num cat-${p.cat}">${p.id}</span> ${p.name}`;
+      ol.appendChild(li);
+    }
+    legendCol.appendChild(sec);
+  }
+
+  // Placeholder for «Du er her»-boks (fylles inn av geocodeAddress)
+  const addrLegend = document.createElement('div');
+  addrLegend.className = 'addr-legend';
+  addrLegend.id = `addr-legend-${areaIdx}`;
+  addrLegend.innerHTML = `
+    <div class="addr-legend-title">
+      <span class="addr-pin"><span>★</span></span>
+      Du er her <span style="opacity:.7;font-weight:400">/ You are here</span>
+    </div>
+    <p class="addr-legend-addr" id="addr-legend-text-${areaIdx}"></p>
+  `;
+  legendCol.appendChild(addrLegend);
+
+  if (CONFIG.qr_url) {
+    const qr = document.createElement('div');
+    qr.className = 'qr-box';
+    qr.innerHTML = `<div id="qr-${areaIdx}"></div><div>${CONFIG.qr_label || 'Mer info'}</div>`;
+    legendCol.appendChild(qr);
+  }
+
+  body.appendChild(legendCol);
+  page.appendChild(body);
+
+  // Snefokk footer — under kartet, full bredde
+  const footer = document.createElement('div');
+  footer.className = 'snefokk-footer';
+  footer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 693 491"><path d="M462 594 504 637 1045 56 1158 27V0H678V27L815 54L366 536H324V582H377L848 960L701 991V1024H1085V991L938 958ZM359 57 502 27V0H32V27L175 57V1315Q162 1321 138.5 1331.5Q115 1342 83.0 1356.5Q51 1371 12 1389V1407L355 1484H359V1320Z" transform="matrix(-0.25 0 0 -0.25 349.50 431.00)" fill="#1A1A1A"/><path d="M462 594 504 637 1045 56 1158 27V0H678V27L815 54L366 536H324V582H377L848 960L701 991V1024H1085V991L938 958ZM359 57 502 27V0H32V27L175 57V1315Q162 1321 138.5 1331.5Q115 1342 83.0 1356.5Q51 1371 12 1389V1407L355 1484H359V1320Z" transform="matrix(0.25 0 0 -0.25 343.50 431.00)" fill="#1A1A1A"/></svg><a href="https://snefokk.com" target="_blank">snefokk.com</a>`;
+  page.appendChild(footer);
+
+  root.appendChild(page);
+
+  setTimeout(() => initAreaMaps(area, areaIdx), 50);
+}
+
+function initAreaMaps(area, areaIdx) {
+  if (area.single_map) return initSingleMap(area, areaIdx);
+
+  // OVERVIEW + INSET
+  const insetPlaces = area.inset ? area.places.filter(p => isInsetPlace(p, area.inset)) : [];
+  const mainPlaces = area.inset ? area.places.filter(p => !isInsetPlace(p, area.inset)) : area.places;
+
+  spreadOverlapping(mainPlaces, 40, 20);
+  // NB: insetPlaces spres ETTER adaptiv zoom er bestemt (se lenger ned)
+
+  const bearing = area.rotation != null ? area.rotation : 0;
+
+  const mainMap = L.map(`map-${areaIdx}`, {
+    ...STATIC_MAP_OPTS,
+    attributionControl: true,
+    zoomSnap: 0.1, zoomDelta: 0.1,
+    rotate: !!(bearing),
+    rotateControl: false, touchRotate: false, shiftKeyRotate: false,
+    bearing: bearing,
+  });
+  ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
+    if (mainMap[h] && mainMap[h].disable) mainMap[h].disable();
+  });
+  L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTR }).addTo(mainMap);
+
+  // Overview bounds: bruk konfig-bounds hvis oppgitt, ellers auto-tight
+  let overviewBounds;
+  if (area.bounds && area.bounds.length === 2) {
+    // Konfig-bounds er eksplisitt satt — bruk dem direkte
+    overviewBounds = area.bounds;
+  } else if (mainPlaces.length >= 4) {
+    // Auto-tight: beregn kjerne-cluster (ekskluder outliers)
+    const cLat = mainPlaces.reduce((s,p) => s + p.lat, 0) / mainPlaces.length;
+    const cLng = mainPlaces.reduce((s,p) => s + p.lng, 0) / mainPlaces.length;
+    const withDist = mainPlaces.map(p => {
+      const dlat = (p.lat - cLat) * RAT_LAT;
+      const dlng = (p.lng - cLng) * RAT_LNG;
+      return { p, dist: Math.sqrt(dlat*dlat + dlng*dlng) };
+    }).sort((a,b) => a.dist - b.dist);
+    const coreCount = Math.max(3, Math.round(mainPlaces.length * 0.60));
+    const core = withDist.slice(0, coreCount).map(x => x.p);
+    const coreLats = core.map(p => p.lat);
+    const coreLngs = core.map(p => p.lng);
+    const padLat = (Math.max(...coreLats) - Math.min(...coreLats)) * 0.12 || 0.001;
+    const padLng = (Math.max(...coreLngs) - Math.min(...coreLngs)) * 0.12 || 0.002;
+    overviewBounds = [
+      [Math.min(...coreLats) - padLat, Math.min(...coreLngs) - padLng],
+      [Math.max(...coreLats) + padLat, Math.max(...coreLngs) + padLng],
+    ];
+  } else {
+    overviewBounds = [[70.0, 29.0], [71.0, 31.0]]; // fallback
+  }
+  if (area.zoom) {
+    // Eksplisitt zoom: bruk senteret av bounds + oppgitt zoom-nivå
+    const bCenter = L.latLngBounds(overviewBounds).getCenter();
+    mainMap.setView(bCenter, area.zoom);
+  } else {
+    mainMap.fitBounds(L.latLngBounds(overviewBounds), { padding: [8, 8] });
+  }
+  // Registrer hovedkartet for adresse-markering
+  MAP_REGISTRY.maps.push({ map: mainMap, type: 'main', areaIdx });
+
+  // Plasser markører — med pilmarkører for POIs utenfor synsfeltet
+  setTimeout(() => {
+    const { mapSize, isOnScreen } = makeVisibilityChecker(mainMap);
+    const overviewCenter = mainMap.getCenter();
+    const insideMain = [], outsideMain = [];
+    for (const p of mainPlaces) {
+      if (isOnScreen(p.lat, p.lng)) {
+        insideMain.push(p);
+        L.marker([p.displayLat, p.displayLng], { icon: makeIcon(p) })
+          .bindTooltip(`<b>${p.id}.</b> ${p.name}`, { direction: 'auto', offset: [0,-6] })
+          .addTo(mainMap);
+      } else {
+        outsideMain.push(p);
+      }
+    }
+    if (outsideMain.length) {
+      placeEdgeMarkers(outsideMain, mainMap, mapSize, overviewCenter.lat, overviewCenter.lng);
+    }
+  }, 100);
+
+  if (area.inset) {
+    let tightBounds;
+    if (insetPlaces.length >= 2) {
+      const lats = insetPlaces.map(p => p.lat);
+      const lngs = insetPlaces.map(p => p.lng);
+      const padLat = (Math.max(...lats) - Math.min(...lats)) * 0.03 || 0.0005;
+      const padLng = (Math.max(...lngs) - Math.min(...lngs)) * 0.03 || 0.0010;
+      tightBounds = [
+        [Math.min(...lats) - padLat, Math.min(...lngs) - padLng],
+        [Math.max(...lats) + padLat, Math.max(...lngs) + padLng],
+      ];
+    } else {
+      tightBounds = area.inset.bounds;
+    }
+
+    L.rectangle(tightBounds, { className: 'inset-frame', interactive: false }).addTo(mainMap);
+
+    // Auto-rotasjon for inset (samme logikk som single_map)
+    const insetContainerEl = document.getElementById(`map-inset-${areaIdx}`);
+    const mpp = 156543.03 * Math.cos(70.0 * Math.PI / 180) / Math.pow(2, REFERENCE_ZOOM);
+    const mmToPx = 3.7795;
+    const insetW_m = (insetContainerEl ? insetContainerEl.offsetWidth / mmToPx : 132) * mmToPx * mpp;
+    const insetH_m = (insetContainerEl ? insetContainerEl.offsetHeight / mmToPx : 120) * mmToPx * mpp;
+
+    let insetBearing;
+    if (area.inset && area.inset.rotation != null) {
+      insetBearing = area.inset.rotation;
+    } else {
+      insetBearing = findBestBearing(insetPlaces, insetW_m, insetH_m);
+    }
+
+    const insetMap = L.map(`map-inset-${areaIdx}`, {
+      ...STATIC_MAP_OPTS,
+      zoomSnap: 0.25, zoomDelta: 0.25,
+      rotate: true, rotateControl: false, touchRotate: false, shiftKeyRotate: false,
+      bearing: insetBearing,
+    });
+    ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
+      if (insetMap[h] && insetMap[h].disable) insetMap[h].disable();
+    });
+    L.tileLayer(TILE_URL, { maxZoom: 20 }).addTo(insetMap);
+    // Adaptiv zoom: beregn i meter-rom (synkront, ingen Leaflet-avhengighet)
+    const insetCenterLat = insetPlaces.reduce((s,p) => s + p.lat, 0) / insetPlaces.length;
+    const insetCenterLng = insetPlaces.reduce((s,p) => s + p.lng, 0) / insetPlaces.length;
+    const MIN_INSET_ZOOM = 15.0;
+    const TARGET_VISIBLE_RATIO = 0.80;
+
+    // Beregn container-dimensjoner i mm → meter ved gitt zoom
+    const insetEl = document.getElementById(`map-inset-${areaIdx}`);
+    const insetW_mm = insetEl ? insetEl.offsetWidth / 3.7795 : 132;
+    const insetH_mm = insetEl ? insetEl.offsetHeight / 3.7795 : 120;
+
+    function countVisibleAtZoom(zoom, bearing) {
+      const zoomMpp = 156543.03 * Math.cos(70.0 * Math.PI / 180) / Math.pow(2, zoom);
+      const halfW_m = (insetW_mm * 3.7795 * zoomMpp) / 2 - 15;
+      const halfH_m = (insetH_mm * 3.7795 * zoomMpp) / 2 - 15;
+      const rad = bearing * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      let count = 0;
+      for (const p of insetPlaces) {
+        const dx = (p.lng - insetCenterLng) * RAT_LNG;
+        const dy = (p.lat - insetCenterLat) * RAT_LAT;
+        const rx = dx * cos + dy * sin;
+        const ry = -dx * sin + dy * cos;
+        if (Math.abs(rx) <= halfW_m && Math.abs(ry) <= halfH_m) count++;
+      }
+      return count;
+    }
+
+    let bestZoom = REFERENCE_ZOOM;
+    while (bestZoom > MIN_INSET_ZOOM) {
+      const vis = countVisibleAtZoom(bestZoom, insetBearing);
+      if (vis / insetPlaces.length >= TARGET_VISIBLE_RATIO) break;
+      bestZoom -= 0.25;
+    }
+
+    insetMap.setView([insetCenterLat, insetCenterLng], bestZoom);
+    if (area.inset.zoom_boost) insetMap.setZoom(insetMap.getZoom() + area.inset.zoom_boost);
+
+    // Plasser markører — med piksel-basert overlap-sjekk
+    setTimeout(() => {
+      const { mapSize, isOnScreen } = makeVisibilityChecker(insetMap);
+      const insetInside = [], insetOutside = [];
+      for (const p of insetPlaces) {
+        if (isOnScreen(p.lat, p.lng)) {
+          insetInside.push(p);
+        } else {
+          insetOutside.push(p);
+        }
+      }
+
+      // Piksel-basert spread: dytt overlappende markører fra hverandre
+      // Jobber i piksel-rom (håndterer rotasjon korrekt), bruker containerPointToLatLng for tilbake-konvertering
+      const MIN_PX = 32; // minimum piksler mellom markør-sentre (markør ~24px + luft)
+      const EDGE_PAD = 16; // minimum avstand fra kant (halv markørbredde + litt)
+      const spreadIter = 80;
+      // Bygg piksel-posisjoner fra originale koordinater
+      const pxPos = insetInside.map(p => {
+        const pt = insetMap.latLngToContainerPoint([p.lat, p.lng]);
+        return { p, x: pt.x, y: pt.y };
+      });
+
+      // Steg 1: Clamp til kanter FØRST (så spread jobber med reelle posisjoner)
+      for (const item of pxPos) {
+        if (item.x < EDGE_PAD) item.x = EDGE_PAD;
+        if (item.y < EDGE_PAD) item.y = EDGE_PAD;
+        if (item.x > mapSize.x - EDGE_PAD) item.x = mapSize.x - EDGE_PAD;
+        if (item.y > mapSize.y - EDGE_PAD) item.y = mapSize.y - EDGE_PAD;
+      }
+      // Steg 2: Overlap-spread — markører ved kant dytter kun den andre
+      for (let iter = 0; iter < spreadIter; iter++) {
+        let moved = false;
+        for (let i = 0; i < pxPos.length; i++) {
+          for (let j = i + 1; j < pxPos.length; j++) {
+            const a = pxPos[i], b = pxPos[j];
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < MIN_PX && dist > 0.1) {
+              const aAtEdge = a.x <= EDGE_PAD + 1 || a.y <= EDGE_PAD + 1 || a.x >= mapSize.x - EDGE_PAD - 1 || a.y >= mapSize.y - EDGE_PAD - 1;
+              const bAtEdge = b.x <= EDGE_PAD + 1 || b.y <= EDGE_PAD + 1 || b.x >= mapSize.x - EDGE_PAD - 1 || b.y >= mapSize.y - EDGE_PAD - 1;
+              const need = MIN_PX - dist;
+              const nx = dx / dist, ny = dy / dist;
+              if (aAtEdge && !bAtEdge) {
+                b.x += need * nx; b.y += need * ny;
+              } else if (bAtEdge && !aAtEdge) {
+                a.x -= need * nx; a.y -= need * ny;
+              } else {
+                const push = need / 2;
+                a.x -= push * nx; a.y -= push * ny;
+                b.x += push * nx; b.y += push * ny;
+              }
+              moved = true;
+            }
+          }
+        }
+        if (!moved) break;
+      }
+      // Steg 3: Endelig clamp (sikkerhetsnett)
+      for (const item of pxPos) {
+        if (item.x < EDGE_PAD) item.x = EDGE_PAD;
+        if (item.y < EDGE_PAD) item.y = EDGE_PAD;
+        if (item.x > mapSize.x - EDGE_PAD) item.x = mapSize.x - EDGE_PAD;
+        if (item.y > mapSize.y - EDGE_PAD) item.y = mapSize.y - EDGE_PAD;
+      }
+      // Konverter justerte piksel-posisjoner tilbake til lat/lng
+      // Verifiser med round-trip: pixel → latLng → pixel
+      for (const item of pxPos) {
+        const ll = insetMap.containerPointToLatLng(L.point(item.x, item.y));
+        item.p.displayLat = ll.lat;
+        item.p.displayLng = ll.lng;
+        // Debug round-trip
+        const verify = insetMap.latLngToContainerPoint(ll);
+        if (Math.abs(verify.x - item.x) > 2 || Math.abs(verify.y - item.y) > 2) {
+          console.warn(`[pxspread] ROUND-TRIP FEIL #${item.p.id}: ønsket (${item.x.toFixed(1)},${item.y.toFixed(1)}) → latLng (${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}) → pixel (${verify.x.toFixed(1)},${verify.y.toFixed(1)})`);
+        }
+      }
+      // Debug: logg eventuelle justeringer
+      let spreadCount = 0;
+      for (const item of pxPos) {
+        const orig = insetMap.latLngToContainerPoint([item.p.lat, item.p.lng]);
+        if (Math.abs(orig.x - item.x) > 1 || Math.abs(orig.y - item.y) > 1) {
+          spreadCount++;
+          console.log(`[pxspread] #${item.p.id}: (${orig.x.toFixed(0)},${orig.y.toFixed(0)}) → (${item.x.toFixed(0)},${item.y.toFixed(0)}), display=(${item.p.displayLat.toFixed(6)},${item.p.displayLng.toFixed(6)})`);
+        }
+      }
+      if (spreadCount) console.log(`[pxspread] ${spreadCount} markører justert`);
+
+      // Legg til markørene med justerte display-koordinater
+      for (const p of insetInside) {
+        L.marker([p.displayLat, p.displayLng], { icon: makeIcon(p) })
+          .bindTooltip(`<b>${p.id}.</b> ${p.name}`, { direction: 'auto', offset: [0,-6] })
+          .addTo(insetMap);
+      }
+      if (insetOutside.length) {
+        placeEdgeMarkers(insetOutside, insetMap, mapSize, insetCenterLat, insetCenterLng);
+      }
+      console.log(`[inset] Area ${areaIdx}: zoom=${bestZoom}, bearing=${insetBearing}°, ${insetInside.length}/${insetPlaces.length} synlig`);
+    }, 200);
+
+    addNorthArrow(`map-inset-${areaIdx}`, insetMap, insetPlaces);
+    addScaleBar(`map-inset-${areaIdx}`, getContainerMeters().mpp);
+    // Registrer inset-kartet for adresse-markering
+    MAP_REGISTRY.maps.push({ map: insetMap, type: 'inset', areaIdx });
+  }
+
+  addNorthArrow(`map-${areaIdx}`, mainMap, area.places);
+
+  if (CONFIG.qr_url) {
+    new QRCode(document.getElementById(`qr-${areaIdx}`), {
+      text: CONFIG.qr_url, width: 80, height: 80,
+      colorDark: '#000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+}
+
+/* SINGLE-MAP: fast zoom 16 + auto-rotasjon */
+function initSingleMap(area, areaIdx) {
+  const dims = getContainerMeters();
+  spreadByAddress(area.places);
+
+  let bearing;
+  if (area.rotation != null) { bearing = area.rotation; }
+  else { bearing = findBestBearing(area.places, dims.w_m, dims.h_m); }
+
+  const centerLat = area.places.reduce((s,p) => s + p.lat, 0) / area.places.length;
+  const centerLng = area.places.reduce((s,p) => s + p.lng, 0) / area.places.length;
+
+  const map = L.map(`map-${areaIdx}`, {
+    ...STATIC_MAP_OPTS,
+    attributionControl: true,
+    zoomSnap: 0.1, zoomDelta: 0.1,
+    rotate: true, rotateControl: false, touchRotate: false, shiftKeyRotate: false,
+    bearing: bearing,
+  });
+  ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
+    if (map[h] && map[h].disable) map[h].disable();
+  });
+  L.tileLayer(TILE_URL, { maxZoom: 20, attribution: TILE_ATTR }).addTo(map);
+  map.setView([centerLat, centerLng], REFERENCE_ZOOM);
+
+  // Zoom-avhengig spread
+  const singleMpp = 156543.03 * Math.cos(70.0 * Math.PI / 180) / Math.pow(2, REFERENCE_ZOOM);
+  spreadOverlapping(area.places, 30 * singleMpp, 80);
+
+  const { mapSize, isOnScreen } = makeVisibilityChecker(map);
+  const insideList = [], outsideList = [];
+  for (const p of area.places) {
+    if (isOnScreen(p.lat, p.lng)) {
+      insideList.push(p);
+      L.marker([p.displayLat, p.displayLng], { icon: makeIcon(p) })
+        .bindTooltip(`<b>${p.id}.</b> ${p.name}`, { direction: 'auto', offset: [0,-6] })
+        .addTo(map);
+    } else {
+      outsideList.push(p);
+    }
+  }
+  placeEdgeMarkers(outsideList, map, mapSize, centerLat, centerLng);
+
+  const debug = document.createElement('div');
+  debug.className = 'debug-info';
+  debug.innerHTML = `Zoom: ${REFERENCE_ZOOM} | Bearing: ${bearing}&deg;` +
+    (area.rotation != null ? ' (manuell)' : ' (auto)') +
+    ` | ${insideList.length}/${area.places.length} synlig`;
+  document.getElementById(`map-${areaIdx}`).appendChild(debug);
+
+  addNorthArrow(`map-${areaIdx}`, map, area.places);
+  addScaleBar(`map-${areaIdx}`, dims.mpp);
+
+  if (CONFIG.qr_url) {
+    new QRCode(document.getElementById(`qr-${areaIdx}`), {
+      text: CONFIG.qr_url, width: 80, height: 80,
+      colorDark: '#000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+  console.log(`[fast-skala] Area ${areaIdx}: zoom=${REFERENCE_ZOOM}, bearing=${bearing}°, ${insideList.length}/${area.places.length} synlig`);
+}
+
+function init() {
+  const root = document.getElementById('root');
+  CONFIG.areas.forEach((area, i) => renderArea(area, i, root));
+}
+
+function printColor() {
+  document.body.classList.remove('bw-mode');
+  setTimeout(() => window.print(), 100);
+}
+function printBW() {
+  document.body.classList.add('bw-mode');
+  setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('bw-mode'), 500); }, 100);
+}
+
+// ==========================================
+// Adresse-markering (Airbnb / utleie)
+// ==========================================
+function makeAddrIcon() {
+  return L.divIcon({
+    className: '',
+    html: `<div class="custom-addr-marker"><span class="addr-star">★</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
+}
+
+function removeAddress() {
+  MAP_REGISTRY.addrMarkers.forEach(m => m.remove());
+  MAP_REGISTRY.addrMarkers = [];
+  document.getElementById('addrRemoveBtn').style.display = 'none';
+  document.getElementById('addrStatus').textContent = '';
+  document.getElementById('addrStatus').className = 'addr-status';
+  document.getElementById('addrInput').value = '';
+  // Skjul «Du er her» i print-legend
+  document.querySelectorAll('.addr-legend').forEach(el => {
+    el.classList.remove('visible');
+  });
+}
+
+async function geocodeAddress() {
+  const input = document.getElementById('addrInput').value.trim();
+  const status = document.getElementById('addrStatus');
+  if (!input) {
+    status.textContent = 'Skriv inn en adresse først.';
+    status.className = 'addr-status error';
+    return;
+  }
+
+  // Fjern eksisterende markører
+  removeAddress();
+  document.getElementById('addrInput').value = input;
+
+  // Hent kommunenavn fra config
+  const kommune = CONFIG.brand?.tittel_topp || '';
+  const query = `${input}, ${kommune}, Norge`;
+
+  status.textContent = 'Søker etter adresse…';
+  status.className = 'addr-status';
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?` +
+      `format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=no`;
+    const resp = await fetch(url, {
+      headers: { 'Accept-Language': 'no,en' }
+    });
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      status.textContent = `Fant ikke «${input}». Prøv med fullt gatenavn og husnummer.`;
+      status.className = 'addr-status error';
+      return;
+    }
+
+    const lat = parseFloat(data[0].lat);
+    const lng = parseFloat(data[0].lon);
+    const displayName = data[0].display_name.split(',').slice(0, 3).join(', ');
+
+    // Legg til markør på alle kart der adressen er synlig
+    const icon = makeAddrIcon();
+    let addedCount = 0;
+
+    MAP_REGISTRY.maps.forEach(({ map, type }) => {
+      const bounds = map.getBounds();
+      if (bounds.contains([lat, lng])) {
+        const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 })
+          .bindTooltip(`📍 ${input}`, { direction: 'top', offset: [0, -28], permanent: false })
+          .addTo(map);
+        MAP_REGISTRY.addrMarkers.push(marker);
+        addedCount++;
+      }
+    });
+
+    if (addedCount === 0) {
+      // Adressen er utenfor alle kartvisninger — legg til på hovedkartet med pil
+      MAP_REGISTRY.maps.filter(m => m.type === 'main').forEach(({ map }) => {
+        const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 })
+          .bindTooltip(`📍 ${input} (utenfor kartvisning)`, { direction: 'top', offset: [0, -28] })
+          .addTo(map);
+        MAP_REGISTRY.addrMarkers.push(marker);
+      });
+      status.textContent = `⚠️ «${displayName}» er utenfor kartvisningen, men markøren er lagt til.`;
+      status.className = 'addr-status error';
+    } else {
+      status.textContent = `✓ Markert: ${displayName}`;
+      status.className = 'addr-status success';
+    }
+    document.getElementById('addrRemoveBtn').style.display = '';
+
+    // Vis «Du er her»-boks i print-legend
+    document.querySelectorAll('.addr-legend').forEach(el => {
+      el.classList.add('visible');
+    });
+    document.querySelectorAll('[id^="addr-legend-text-"]').forEach(el => {
+      el.textContent = input;
+    });
+
+  } catch (err) {
+    status.textContent = `Feil ved adressesøk: ${err.message}`;
+    status.className = 'addr-status error';
+  }
+}
+
+// Enter-tast i adressefeltet
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('addrInput');
+  if (inp) inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') geocodeAddress();
+  });
+});
+
+init();
+</script>
+</body>
+</html>

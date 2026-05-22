@@ -1,0 +1,14 @@
+{
+  "_kommentar": "Snefokk generisk fallback-branding. Brukes når kommunen ikke har en spesifikk visuell identitet å hente fra. Nøytrale, varme farger som ser bra ut i print og passer for de fleste kommuner.",
+  "tittel_topp": "KOMMUNEN",
+  "tittel_bunn": "Turistkart",
+  "logo_url": null,
+  "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+  "font_family": "'Inter', system-ui, sans-serif",
+  "farger": {
+    "primary":   "#2D4F3E",
+    "secondary": "#F4F1E8",
+    "accent":    "#C9A961",
+    "text":      "#1A1A1A"
+  }
+}
