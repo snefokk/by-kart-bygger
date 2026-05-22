@@ -272,29 +272,22 @@ Etter at brukeren har valgt, sett `inset.bounds = [[sørLat, vestLng], [nordLat,
 
 Målet med innsettet er å vise **flest mulig POIs** ved zoom 16 med lesbare gatenavn. Templaten auto-tightener til tetteste bounding-box rundt inset-POIs, så én outlier kan dra hele zoomen utover og gjøre gatenavn uleselige.
 
-**Algoritme — fjern outliers, behold clusteret:**
+**Algoritme — fjern outliers automatisk, informer brukeren etterpå:**
 
 1. Start med alle POIs innenfor `inset.bounds` — kall dette settet S.
 2. Beregn bounding-box for S (min/maks lat og lng).
 3. For hvert punkt P i S: beregn bounding-box for S minus P. Regn ut hvor mye bounding-boxen krymper (i meter) dersom P fjernes.
 4. Finn punktet P* som gir størst krymping. Hvis P* krymper boksen med >30 % i enten bredde eller høyde, er det en outlier.
-5. Flytt P* til `force_main_ids` (det vises på oversiktskartet i stedet).
+5. Flytt P* til `force_main_ids` automatisk — ikke spør brukeren.
 6. Gjenta fra steg 2 med oppdatert S til ingen enkelt-punkt gir >30 % krymping.
+7. Når algoritmen er ferdig, informer brukeren kort: «Jeg flyttet [navn] til oversiktskartet fordi det lå utenfor sentrums-clusteret og dro zoomen utover. Det vises som vanlig markør på det store kartet.»
 
-**Konkret eksempel — Berlevåg:**
-
-- Opprinnelig inset inkluderte punkt 4, 5, 6, 9 (Motell, Pensjonat, Kvitbrakka, Havnemuseum) og punkt 10 (Berlevåg kirke).
-- Kirka (10) lå ~200 m nord for resten og dro bounding-boxen utover slik at punktene 4, 5, 6, 9 havnet utenfor synsfeltet.
-- **Feil løsning**: Fjerne 4, 5, 6, 9 fra innsettet. Da mister man viktige sentrumspunkter.
-- **Riktig løsning**: Fjerne outlieren (10) til `force_main_ids`. Da får innsettet 10 POIs med god zoom og lesbare gatenavn, og kirka vises tydelig på oversiktskartet.
-
-**Tommelfingerregel**: fjern alltid det punktet som er lengst unna tyngdepunktet av clusteret — IKKE den tette gruppen som utgjør kjernen. Spør deg selv: «Fjerner jeg en enslig outlier, eller splitter jeg opp et cluster?» Hvis du fjerner en gruppe på 3+ punkter som ligger nært hverandre, gjør du det feil.
+**Tommelfingerregel**: fjern alltid det punktet som er lengst unna tyngdepunktet av clusteret — IKKE den tette gruppen som utgjør kjernen. Hvis du ser at du er i ferd med å fjerne en gruppe på 3+ punkter som ligger nært hverandre, stopp — da er det feil retning.
 
 **Pass på følgende i tillegg:**
 
-1. Bounds bør ha fornuftig aspect ratio — hvis POIs ligger på en lang stripe (f.eks. én gate), vurder å dele i to inset eller akseptere stripe-formet utsnitt
+1. Bounds bør ha fornuftig aspect ratio — hvis POIs ligger på en lang stripe (f.eks. én gate), vurder å dele i to inset eller akseptere stripe-formet utsnitt.
 2. Etter første bygg: åpne HTML-en og bekreft visuelt at gatenavnene er lesbare. Hvis ikke, kjør outlier-algoritmen på nytt og fjern neste outlier.
-3. Presenter `force_main_ids`-endringene for brukeren og forklar hvilke punkter som flyttes til oversiktskartet og hvorfor.
 
 Det runtime self-check-et i templaten skriver `console.warn` hvis et POI faller utenfor — sjekk DevTools-konsollen ved tvil.
 
@@ -543,19 +536,6 @@ Bruk `force_inset_ids` / `force_main_ids` i inset-config for å overstyre hvilke
 
 Hvis auto-rotasjonen ikke gir godt nok resultat (f.eks. en veldig lang, smal by), kan du overstyre med `area.rotation: <grader>`. Test visuelt og justér.
 
-### Adresse-markering (Airbnb / utleie)
-
-Malen har en innebygd adresse-funksjon som lar sluttbrukere (f.eks. Airbnb-verter) markere sin egen adresse på kartet før de printer. Funksjonen:
-
-- **Adressefelt** øverst på siden (under print-knappene) med «Marker din adresse»-label og «Vis på kart»-knapp
-- **Geocoding** via Nominatim (OpenStreetMap) — kommunenavnet fra `brand.tittel_topp` legges automatisk til søket
-- **Stjerne-markør** (★) i accent-farge plasseres på alle kart der adressen er synlig (hovedkart + inset)
-- **«Du er her / You are here»**-boks i legend-kolonnen under kategori-listene, med adressen — vises bare når en adresse er markert
-- **«Fjern»-knapp** fjerner markør og legend-boks
-- **Ved print** skjules adresse-verktøylinjen, men markøren og legend-boksen følger med på utskriften
-- Enter-tast fungerer i adressefeltet
-
-Funksjonen krever ingen konfigurasjon — den er alltid tilgjengelig i malen. Kart-registeret (`MAP_REGISTRY`) gjør at markøren legges til på alle kart som er synlige.
 
 ## Referansefiler
 
