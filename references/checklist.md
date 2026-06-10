@@ -7,7 +7,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Bekreftet kommune-navn og -nummer
 - [ ] Mottatt gammelt kart (PDF/bilde) eller bekreftet at vi starter blankt
 - [ ] Identifisert alle synlige POIs fra gammelt kart
-- [ ] Lagret utkast i `kart-arbeid/punkter-utkast.json`
+- [ ] Lagret utkast i `outputs/kart-arbeid/punkter-utkast.json`
 
 ## Verifisering
 
@@ -23,7 +23,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Dobbeltsjekket punkter med avrundede koordinater (f.eks. 70.365, 31.091 — disse er ofte feil)
 - [ ] Kjørt duplikat-koordinat-sjekk (gruppér etter lat/lng, rapporter grupper med 2+)
 - [ ] For hver duplikat-gruppe: verifisert om de faktisk er i samme bygg, eller om koordinater er feilkopiert
-- [ ] Presentert duplikat-rapport for brukeren og fått bekreftelse
+- [ ] Informert brukeren om duplikat-resultatet (spurt bare ved tvil)
 
 ## Tillegg
 
@@ -35,7 +35,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Geografisk clustering ferdig — bestemt antall sider
 - [ ] Hver side har en områdetittel
 - [ ] For tette sentrum: bestemt om inset-kart trengs
-- [ ] For små tettsteder (<1,5 km): satt `single_map: true` med auto-rotasjon
+- [ ] For små tettsteder (< ~1 km): satt `single_map: true` med auto-rotasjon
 - [ ] Sjekket at auto-rotasjon gir fornuftig resultat (evt. satt `rotation` manuelt)
 - [ ] POIs utenfor synsfeltet håndteres automatisk som pilmarkører
 
@@ -43,7 +43,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 
 - [ ] Spurt brukeren om kilde (nettside vs snefokk-generisk)
 - [ ] Hentet farger / font / logo
-- [ ] Lagret i `kart-arbeid/brand.json`
+- [ ] Lagret i `outputs/kart-arbeid/brand.json`
 
 ## Bygging
 
@@ -58,5 +58,5 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 ## Levering
 
 - [ ] Kopiert ferdig HTML til kommunens workspace-mappe
-- [ ] Gitt brukeren `computer://`-lenke
+- [ ] Gitt brukeren en klikkbar lenke til filen
 - [ ] Forklart hvordan de printer (Save as PDF for ekstra kvalitet)

@@ -17,6 +17,8 @@ All kommunikasjon med brukeren skjer på **norsk**.
 
 Sjekk at disse er tilgjengelige før du begynner; hvis ikke, gi brukeren beskjed.
 
+**Filplassering:** `scripts/`, `templates/` og `references/` ligger i skillens basemappe — bruk full sti fra basemappen når du kjører kommandoer. Arbeidsfiler og ferdige kart (`outputs/...`) lagres i brukerens workspace-mappe.
+
 ## Overordnet flyt
 
 ```
@@ -94,7 +96,7 @@ Oppdater `punkter-utkast.json` med BRREG-status for hvert punkt.
 
 ## Trinn 3: Hent koordinater fra Google Maps
 
-**VIKTIG:** BRREG `forretningsadresse` er **juridisk adresse** (regnskapsfører, hovedkontor, eier-hjem) — NOT besøksadressen kunden faktisk drar til. Bruk derfor Google Maps som primær kilde for koordinater på turistkartet.
+Som nevnt i Trinn 2: BRREG-adressen er juridisk adresse, ikke besøksadresse. Bruk derfor Google Maps som primær kilde for koordinater på turistkartet.
 
 Prioriteringen er:
 
@@ -130,10 +132,7 @@ Etter at Google Maps-runden er ferdig, presenter en oppsummering:
 - POIs som ble flyttet til riktig besøksadresse (med før/etter-koordinater)
 - POIs som ble omdøpt (f.eks. «Coop Marked» → «Extra Båtsfjord»)
 - POIs flagget som permanent stengt (fjern automatisk eller spør)
-- **POIs som ikke ble funnet** — vis listen via `AskUserQuestion` med multi-select:
-  - «Fjern alle» (default for ukjente)
-  - «Behold med anslag — markeres som uverifisert»
-  - «Jeg sender riktig adresse i neste melding»
+- **POIs som ikke ble funnet** — vis listen i samtalen og still ett tydelig spørsmål: «Disse fant jeg ikke i Google Maps: [liste]. Vil du fjerne dem, eller har du riktig adresse for noen av dem?» Brukeren svarer i fritekst per punkt. Punkter uten avklaring fjernes; punkter brukeren eksplisitt vil beholde uten adresse markeres som uverifisert anslag.
 
 Sett `displayLat`/`displayLng` lik `lat`/`lng` som standard — overstyringer for visuell plassering håndteres senere ved tett klynging.
 
@@ -201,7 +200,7 @@ Identiske koordinater kan bety:
 
 3. **Slå opp hvert punkt i duplikat-gruppen individuelt i Google Maps** og verifiser at de faktisk er på samme sted. Hvis ikke, korriger koordinatene.
 
-4. Presenter duplikat-rapporten for brukeren slik at de kan bekrefte: «Disse 4 punktene deler koordinater — er de i samme bygg?»
+4. Informer brukeren kort om resultatet: hvilke duplikat-grupper som ble bekreftet (samme bygg) og hvilke koordinater som ble korrigert. Spør bare hvis Google Maps-oppslaget ikke ga et entydig svar.
 
 ## Trinn 4: Spør brukeren om tilleggspunkter
 
@@ -411,28 +410,17 @@ Brand-JSON-strukturen er:
 }
 ```
 
+**QR-kode:** Spør samtidig hvilken nettside QR-koden på kartet skal peke til (typisk kommunens turistside eller næringsforeningens side). Lagre URL-en som `qr_url` og en kort visningstekst som `qr_label` i config-en.
+
 ## Trinn 7: Kartfliser (tiles)
 
-Kartet bruker **Leaflet med CARTO Voyager-fliser** som kartbakgrunn. Dette gir OSM sine native stiler med lesbare gatenavn, korrekt kystlinje og vann — uten behov for egenproduserte SVG-kart.
+Kartet bruker **Leaflet med CARTO Voyager-fliser** som kartbakgrunn. Dette gir OSM sine native stiler med lesbare gatenavn og korrekt kystlinje/vann ved alle zoom-nivåer, med retina-støtte via `{r}` i tile-URL-en. Du trenger ikke generere noe kartbakgrunn selv.
 
 Tile-URL: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png`
 
 Templaten legger på et subtilt sepia/desaturerings-filter (`sepia(0.22) saturate(0.7) brightness(1.03)`) for å gi flisene et varmere, print-vennlig utseende.
 
-**VIKTIG: Ikke bruk SVG-pipelinen (`osm_to_svg.py`).** Tidligere forsøk viste at egenproduserte SVG-kart har problemer med kystlinje-polygoner (spesielt for øyer), vann/land-inversjon, og uleselige gatenavn ved zoom 16. Leaflet-fliser løser alle disse problemene fordi OSM sin rendering er optimalisert for hvert zoom-nivå.
-
-Fordeler med tile-basert tilnærming:
-
-- Korrekt kystlinje og vann automatisk (ingen polygon-problemer)
-- Lesbare gatenavn ved alle zoom-nivåer (OSM-rendering)
-- Retina-støtte via `{r}` i tile-URL
-- Rask rendering uten Overpass API-avhengighet
-- Konsistent utseende på tvers av kommuner
-
-Ulempe:
-
-- Krever internettforbindelse ved første lasting (flisene caches i nettleseren)
-- Ikke fullt selvstendig HTML-fil (avhenger av CARTO tile-server)
+Merk: flisene lastes fra CARTO sin tile-server, så HTML-en krever internettforbindelse ved første visning (flisene caches i nettleseren).
 
 ## Trinn 8: Bygg HTML-en
 
@@ -506,11 +494,12 @@ Templaten håndterer:
 - QR-kode (qrcodejs)
 - Auto-spread for overlappende markører (spreadByAddress + spreadOverlapping)
 - Norsk + engelsk parallellkolonne i legend
-- «Marker din adresse»-funksjon for Airbnb/utleie (geocoding via Nominatim)
+- «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
+- Snefokk-logo og «snefokk.com»-lenke i bunnen av hver side — innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler
 
 ## Trinn 9: Lever filen
 
-Kopier den endelige HTML-en til workspace-mappa brukeren har valgt, og presenter en `computer://`-lenke i en kort melding. Foreslå at brukeren:
+Kopier den endelige HTML-en til workspace-mappa brukeren har valgt, og presenter filstien som en klikkbar lenke i en kort melding. Foreslå at brukeren:
 
 - Åpner fila i nettleseren for å sjekke at alt ser riktig ut
 - Bruker Cmd/Ctrl+P og velger «Save as PDF» for å lage en print-versjon
@@ -520,9 +509,9 @@ Kopier den endelige HTML-en til workspace-mappa brukeren har valgt, og presenter
 
 ### Markører som ligger utenfor kartet
 
-I `single_map`-modus håndteres dette **automatisk**: templaten sjekker pikselbasert om hver POI er synlig, og plasserer usynlige POIs som pilmarkører (↑↓←→) ved nærmeste kant. Pilene peker mot den faktiske posisjonen, og tooltip-en viser avstand i km. Kantmarkørene de-overlappes automatisk.
+Dette håndteres **automatisk** i alle kartmoduser: templaten sjekker pikselbasert om hver POI er synlig, og plasserer usynlige POIs som pilmarkører (↑↓←→) ved nærmeste kant. Pilene peker mot den faktiske posisjonen, og tooltip-en viser avstand i km. Kantmarkørene de-overlappes automatisk.
 
-I overview+inset-modus kan du fortsatt bruke `arrow: 'right'` etc. manuelt, men for de fleste tilfeller er `single_map: true` bedre.
+Templaten støtter også manuell overstyring per POI (`arrow: 'right'` osv. i config), men sett den ALDRI selv som standard — bruk den bare hvis du visuelt har bekreftet at automatikken plasserer en pil feil.
 
 ### Markører som overlapper
 
@@ -536,6 +525,18 @@ Bruk `force_inset_ids` / `force_main_ids` i inset-config for å overstyre hvilke
 
 Hvis auto-rotasjonen ikke gir godt nok resultat (f.eks. en veldig lang, smal by), kan du overstyre med `area.rotation: <grader>`. Test visuelt og justér.
 
+### «Marker din adresse»-funksjonen
+
+Det ferdige kartet har en innebygd funksjon som lar sluttbrukere markere en valgfri adresse på kartet før de printer:
+
+- **Adressefelt** øverst på siden (under print-knappene) med «Marker din adresse»-label og «Vis på kart»-knapp
+- **Geocoding** via Nominatim (OpenStreetMap) — kommunenavnet fra `brand.tittel_topp` legges automatisk til søket
+- **Stjerne-markør** (★) i accent-farge plasseres på alle kart der adressen er synlig (hovedkart + inset)
+- **«Du er her / You are here»**-boks i legend-kolonnen, med adressen — vises bare når en adresse er markert
+- **«Fjern»-knapp** fjerner markør og legend-boks
+- **Ved print** skjules adresse-verktøylinjen, men markøren og legend-boksen følger med på utskriften
+
+Funksjonen er alltid med i malen og krever ingen konfigurasjon — du trenger IKKE spørre brukeren om noe (f.eks. formål eller målgruppe) for at den skal fungere.
 
 ## Referansefiler
 
