@@ -7,6 +7,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Bekreftet kommune-navn og -nummer
 - [ ] Mottatt gammelt kart (PDF/bilde) eller bekreftet at vi starter blankt
 - [ ] Identifisert alle synlige POIs fra gammelt kart
+- [ ] Lagt til flyplass, togstasjon og havn/hurtigrutekai hvis kommunen har dem
 - [ ] Lagret utkast i `outputs/kart-arbeid/punkter-utkast.json`
 
 ## Verifisering
@@ -41,7 +42,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 
 ## Branding
 
-- [ ] Spurt brukeren om kilde (nettside vs snefokk-generisk)
+- [ ] Spurt brukeren om kilde (nettside vs standard)
 - [ ] Hentet farger / font / logo
 - [ ] Lagret i `outputs/kart-arbeid/brand.json`
 

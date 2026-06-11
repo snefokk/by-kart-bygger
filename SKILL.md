@@ -11,11 +11,13 @@ All kommunikasjon med brukeren skjer på **norsk**.
 
 ## Hva trenger du før du starter
 
-- **Claude in Chrome** (eller tilsvarende nettleser-MCP) — for Google Maps-oppslag
+- **Claude in Chrome** — for Google Maps-oppslag. Utvidelsen fungerer bare med Google Chrome. Hvis brukeren har Edge, Safari eller en annen nettleser: anbefal å installere Chrome med utvidelsen for best resultat. Hvis det ikke er aktuelt, bruk OSM Nominatim-fallbacken i Trinn 3 (ren API, trenger ingen nettleser) — men si fra at koordinatene da er mindre verifisert, og legg ekstra vekt på visuell kontroll av det ferdige kartet.
 - **Bash/Python** — for å kjøre BRREG-oppslag og bygge HTML-en
 - **Workspace-tilgang** — alle filer lagres i brukerens workspace-mappe
 
 Sjekk at disse er tilgjengelige før du begynner; hvis ikke, gi brukeren beskjed.
+
+**Anbefalt modell:** Kjør skillen med en av de kraftigste modellene (Claude Fable eller Opus). Arbeidsflyten har mange verifiseringssteg over lang kontekst; mindre modeller hopper oftere over koordinat-kontrollene. Hvis brukeren kjører en mindre modell, foreslå å bytte før dere starter.
 
 **Filplassering:** `scripts/`, `templates/` og `references/` ligger i skillens basemappe — bruk full sti fra basemappen når du kjører kommandoer. Arbeidsfiler og ferdige kart (`outputs/...`) lagres i brukerens workspace-mappe.
 
@@ -27,7 +29,7 @@ Sjekk at disse er tilgjengelige før du begynner; hvis ikke, gi brukeren beskjed
 3. Slå opp koordinater i Google Maps (eller bekreft eksisterende)
 4. Spør brukeren om tillegg
 5. Bestem områder/sider (auto-clustering)
-6. Velg branding (kommunens nettside eller snefokk-generisk)
+6. Velg branding (kommunens nettside eller standard)
 7. Kartfliser (CARTO Voyager tiles — ingen SVG-generering nødvendig)
 8. Bygg HTML-en med templates/kart_template.html + scripts/build_html.py
 9. Lever ferdig fil
@@ -48,8 +50,8 @@ Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gamm
 
 **Hvis det ikke er et gammelt kart**:
 
-- Spør brukeren via AskUserQuestion hvilke type punkter de vil ha med (kategorier) og om de har en liste
-- Eller spør om navnet på kommunen og foreslå at du kan starte fra Google Maps + lokal næringsforening
+- Ikke be brukeren krysse av for kategorier. Foreslå standardutvalget direkte: «Jeg tar med overnattingssteder, spisesteder, utesteder, butikker og de mest kjente severdighetene. Er det greit?» Brukeren justerer i fritekst.
+- Spør om navnet på kommunen hvis det ikke er oppgitt, og start fra Google Maps + lokal næringsforening
 
 **Sett opp en arbeids-liste** med foreløpige punkter slik:
 
@@ -64,6 +66,8 @@ Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gamm
 ```
 
 Lagre dette i `outputs/kart-arbeid/punkter-utkast.json` for å holde oversikt.
+
+**Ta alltid med transportpunkter:** flyplass, togstasjon og havn/hurtigrutekai (kategori `other`) skal alltid med på kartet hvis kommunen har dem — også når de ligger langt utenfor sentrum. Ligger de utenfor kartutsnittet, rendrer templaten dem automatisk som pilmarkør ved kanten, med avstanden i km trykket under pila. Du trenger ikke gjøre noe spesielt utover å inkludere punktene med riktige koordinater.
 
 ## Trinn 2: Verifiser hver bedrift mot Brønnøysundregistrene
 
@@ -102,7 +106,7 @@ Prioriteringen er:
 
 1. **Brukerinput** — hvis brukeren gir deg en spesifikk adresse, bruk den
 2. **Google Maps via Claude in Chrome** — autoritativ for besøksadresse
-3. **OSM Nominatim med bedriftsnavn** — gratis fallback hvis Google blokkerer
+3. **OSM Nominatim med bedriftsnavn** — gratis fallback hvis Google blokkerer eller nettleser-MCP ikke er tilgjengelig (f.eks. brukeren har Edge/Safari). API: `https://nominatim.openstreetmap.org/search?q=<navn>,+<kommune>&format=json&limit=3` (krever User-Agent-header). Sett `coord_kilde: «OSM»` og flagg som lavere konfidens.
 4. **BRREG forretningsadresse** — siste utvei, men flagg som lav-konfidens
 
 **Google Maps-flyten:**
@@ -386,8 +390,9 @@ RGB-verdier fra `getComputedStyle` er på formen `rgb(15, 47, 111)` — konverte
 
 **VIKTIG: Bruk ALLTID fonten fra den oppgitte nettsiden.** Ikke hardkod Quicksand eller noen annen font. Hvert kart skal ha fonten som matcher kommunens/oppdragsgiverens nettside.
 
-**Alternativ B: Snefokk-generisk** (bare hvis brukeren ikke har en nettside)
+**Alternativ B: Standard** (bare hvis brukeren ikke har en nettside)
 
+- Omtal alltid dette alternativet som «standard» overfor brukeren — aldri «snefokk-generisk»
 - Bruk `templates/snefokk-generisk/style.json`
 - Dette gir en pen, nøytral grønn-cream-stil
 

@@ -291,14 +291,16 @@
     text-align: center;
     font-size: 7pt;
   }
-  .qr-box canvas { display: block; margin: 0 auto 1mm; }
+  .qr-box canvas, .qr-box img { display: block; margin: 0 auto 1mm; }
 
-  /* "Laget av / Made by"-credit — under QR-koden i legend, som på Vadsø-kartet */
+  /* "Laget av / Made by"-credit — under QR-koden i legend, som på Vadsø-kartet.
+     Vertikal: label på én linje, logo midtstilt under. */
   .snefokk-credit {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2mm;
+    gap: 1mm;
     margin-top: 7mm;
   }
   .snefokk-credit .label {
@@ -306,6 +308,7 @@
     color: #888;
     letter-spacing: 0.3px;
     line-height: 1.2;
+    white-space: nowrap;
   }
   .snefokk-credit svg {
     height: 5mm;
@@ -356,6 +359,23 @@
     font-size: 14px; font-weight: 800;
     color: var(--brand-dark);
     text-shadow: 0 0 2px white, 0 0 3px white;
+  }
+  /* Avstandstekst under kantmarkører (over ved pil-ned) — synlig på print */
+  .poi-marker .edge-dist {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 5pt;
+    font-weight: 700;
+    color: #333;
+    text-shadow: 0 0 2px white, 0 0 3px white, 0 0 4px white;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .poi-marker .edge-dist.above {
+    top: auto;
+    bottom: calc(100% + 1px);
   }
   .poi-marker.arrow-down { position: relative; overflow: visible; margin-bottom: 14px; }
   .poi-marker.arrow-down::after {
@@ -625,9 +645,15 @@ function makeIcon(p) {
   } else if (p.arrow === 'down') {
     arrow = ' arrow-down'; iconSize = [18, 32]; iconAnchor = [9, 9];
   }
+  // Avstandstekst for kantmarkører — trykkes på kartet (tooltips kommer ikke med på print)
+  let distHtml = '';
+  if (p.edgeDistKm != null) {
+    const txt = p.edgeDistKm < 10 ? p.edgeDistKm.toFixed(1).replace('.', ',') : String(Math.round(p.edgeDistKm));
+    distHtml = `<div class="edge-dist${p.arrow === 'down' ? ' above' : ''}">${txt} km</div>`;
+  }
   return L.divIcon({
     className: '',
-    html: `<div class="poi-marker cat-${p.cat}${arrow}" title="${p.name || ''}">${p.id}</div>`,
+    html: `<div class="poi-marker cat-${p.cat}${arrow}" title="${p.name || ''}">${p.id}${distHtml}</div>`,
     iconSize, iconAnchor,
   });
 }
@@ -806,10 +832,11 @@ function placeEdgeMarkers(outsidePlaces, map, mapSize, centerLat, centerLng) {
     let arrow;
     if (Math.abs(dx) > Math.abs(dy)) { arrow = dx > 0 ? 'right' : 'left'; }
     else { arrow = dy > 0 ? 'down' : 'up'; }
-    const pp = { ...p, arrow };
-    const distX = (p.lng - centerLng) * RAT_LNG;
-    const distY = (p.lat - centerLat) * RAT_LAT;
+    // Avstand måles fra der pila står til POI-ens faktiske posisjon
+    const distX = (p.lng - edgeLatLng.lng) * RAT_LNG;
+    const distY = (p.lat - edgeLatLng.lat) * RAT_LAT;
     const distKm = Math.sqrt(distX*distX + distY*distY) / 1000;
+    const pp = { ...p, arrow, edgeDistKm: distKm };
     L.marker([edgeLatLng.lat, edgeLatLng.lng], { icon: makeIcon(pp) })
       .bindTooltip(`<b>${p.id}.</b> ${p.name}<br><i>${distKm.toFixed(1)} km</i>`,
         { direction: 'auto', offset: [0,-6] })
@@ -1206,7 +1233,7 @@ function initAreaMaps(area, areaIdx) {
   if (CONFIG.qr_url) {
     new QRCode(document.getElementById(`qr-${areaIdx}`), {
       text: CONFIG.qr_url, width: 80, height: 80,
-      colorDark: '#000', colorLight: '#ffffff',
+      colorDark: '#000', colorLight: 'rgba(255,255,255,0)',
       correctLevel: QRCode.CorrectLevel.M
     });
   }
@@ -1268,7 +1295,7 @@ function initSingleMap(area, areaIdx) {
   if (CONFIG.qr_url) {
     new QRCode(document.getElementById(`qr-${areaIdx}`), {
       text: CONFIG.qr_url, width: 80, height: 80,
-      colorDark: '#000', colorLight: '#ffffff',
+      colorDark: '#000', colorLight: 'rgba(255,255,255,0)',
       correctLevel: QRCode.CorrectLevel.M,
     });
   }
