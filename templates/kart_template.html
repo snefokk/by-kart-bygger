@@ -1128,43 +1128,16 @@ function initAreaMaps(area, areaIdx) {
       if (insetMap[h] && insetMap[h].disable) insetMap[h].disable();
     });
     L.tileLayer(TILE_URL, { maxZoom: 20 }).addTo(insetMap);
-    // Adaptiv zoom: beregn i meter-rom (synkront, ingen Leaflet-avhengighet)
     const insetCenterLat = insetPlaces.reduce((s,p) => s + p.lat, 0) / insetPlaces.length;
     const insetCenterLng = insetPlaces.reduce((s,p) => s + p.lng, 0) / insetPlaces.length;
-    const MIN_INSET_ZOOM = 15.0;
-    const TARGET_VISIBLE_RATIO = 0.80;
 
-    // Beregn container-dimensjoner i mm → meter ved gitt zoom
-    const insetEl = document.getElementById(`map-inset-${areaIdx}`);
-    const insetW_mm = insetEl ? insetEl.offsetWidth / 3.7795 : 132;
-    const insetH_mm = insetEl ? insetEl.offsetHeight / 3.7795 : 120;
-
-    function countVisibleAtZoom(zoom, bearing) {
-      const zoomMpp = 156543.03 * Math.cos(70.0 * Math.PI / 180) / Math.pow(2, zoom);
-      const halfW_m = (insetW_mm * 3.7795 * zoomMpp) / 2 - 15;
-      const halfH_m = (insetH_mm * 3.7795 * zoomMpp) / 2 - 15;
-      const rad = bearing * Math.PI / 180;
-      const cos = Math.cos(rad), sin = Math.sin(rad);
-      let count = 0;
-      for (const p of insetPlaces) {
-        const dx = (p.lng - insetCenterLng) * RAT_LNG;
-        const dy = (p.lat - insetCenterLat) * RAT_LAT;
-        const rx = dx * cos + dy * sin;
-        const ry = -dx * sin + dy * cos;
-        if (Math.abs(rx) <= halfW_m && Math.abs(ry) <= halfH_m) count++;
-      }
-      return count;
-    }
-
-    let bestZoom = REFERENCE_ZOOM;
-    while (bestZoom > MIN_INSET_ZOOM) {
-      const vis = countVisibleAtZoom(bestZoom, insetBearing);
-      if (vis / insetPlaces.length >= TARGET_VISIBLE_RATIO) break;
-      bestZoom -= 0.25;
-    }
-
-    insetMap.setView([insetCenterLat, insetCenterLng], bestZoom);
+    // FAST zoom: innsettet bruker ALLTID nøyaktig REFERENCE_ZOOM (Vadsø-standarden)
+    // slik at detaljnivået er identisk på alle kommunekart. POIs som ikke får
+    // plass rendres som pilmarkører med km-avstand ved kanten — bruk
+    // outlier-algoritmen (force_main_ids) for å holde antallet piler nede.
+    insetMap.setView([insetCenterLat, insetCenterLng], REFERENCE_ZOOM);
     if (area.inset.zoom_boost) insetMap.setZoom(insetMap.getZoom() + area.inset.zoom_boost);
+    console.log(`[fast-skala] Inset ${areaIdx}: zoom=${insetMap.getZoom()} (låst), bearing=${insetBearing}°`);
 
     // Plasser markører — med piksel-basert overlap-sjekk
     setTimeout(() => {

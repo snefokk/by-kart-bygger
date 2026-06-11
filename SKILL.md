@@ -276,15 +276,15 @@ Bruk `AskUserQuestion` med 3–4 forhåndsforeslåtte avgrensninger basert på h
 
 Etter at brukeren har valgt, sett `inset.bounds = [[sørLat, vestLng], [nordLat, østLng]]` i config-JSON. `inset.bounds` brukes som et **filter** — alle POIs som ligger innenfor denne firkanten blir med på detaljkartet. Det er IKKE det faktiske rendrede utsnittet.
 
-**Auto-tightening i templaten**: når kartet rendres, regner JavaScript-en ut den tetteste bounding-boxen rundt de POIs som havnet i inset, og bruker den som zoom-target. Det betyr at:
+**Innsettet rendres med fast zoom 16.0**: kartet sentreres på tyngdepunktet av de POIs som havnet i innsettet, alltid ved nøyaktig zoom 16.0 (Vadsø-standarden). Det betyr at:
 
-- Det er ingen problem om `inset.bounds` har stor dødplass (vann, parker, ubebygde områder) — kartet zoomer automatisk inn til der POIs faktisk ligger
-- Et punkt helt ved kanten av synsfeltet er OK — det er det vi vil ha for maksimal zoom
-- Gatenavn blir så lesbare som det fysisk er mulig gitt punktenes spredning
+- Det er ingen problem om `inset.bounds` har stor dødplass (vann, parker, ubebygde områder) — det er POI-tyngdepunktet som styrer sentreringen, ikke boundsene
+- POIs som ikke får plass i synsfeltet ved zoom 16 rendres automatisk som pilmarkører med km-avstand ved kanten
+- Detaljnivå og gatenavn-lesbarhet er identisk på alle kommunekart
 
 **Inset-optimalisering: Maksimer antall POIs i innsettet (OBLIGATORISK)**
 
-Målet med innsettet er å vise **flest mulig POIs** ved zoom 16 med lesbare gatenavn. Templaten auto-tightener til tetteste bounding-box rundt inset-POIs, så én outlier kan dra hele zoomen utover og gjøre gatenavn uleselige.
+Målet med innsettet er å vise **flest mulig POIs** ved zoom 16 med lesbare gatenavn. Innsettet står fast på zoom 16, så en outlier kan ikke dra zoomen utover — men den drar **tyngdepunktet** (sentreringen) skjevt, slik at kjerneclusteret havner ute mot kanten og outlieren selv ender som pilmarkør. Fjern derfor outliers til `force_main_ids` slik at sentreringen treffer det ekte sentrums-clusteret.
 
 **Algoritme — fjern outliers automatisk, informer brukeren etterpå:**
 
@@ -309,7 +309,7 @@ Det runtime self-check-et i templaten skriver `console.warn` hvis et POI faller 
 
 Templaten bruker en **fast-skala-motor** som sikrer konsistent zoom på tvers av alle kommuner:
 
-- **Adaptiv zoom (mål: 16.0, min: 15.0)** — starter på referanse-zoom 16.0 (hentet fra Vadsø turistkart inset, ~0.817 m/px ved lat 70°). Hvis <80 % av POIs er synlige ved zoom 16, stepper templaten ned med 0.25 til ≥80 % passer (minimum 15.0). Beregningen skjer i meter-rom (synkront, uavhengig av Leaflet rendering). Gatenavnene forblir lesbare ned til 15.0.
+- **Låst zoom 16.0** — både inset og single_map bruker ALLTID nøyaktig zoom 16.0 (Vadsø-standarden, ~0.817 m/px ved lat 70°). Zoomen trappes aldri ned; POIs som ikke får plass i synsfeltet rendres som pilmarkører med km-avstand ved kanten. Dette garanterer identisk detaljnivå og gatenavn-lesbarhet på alle kommunekart.
 - **Auto-rotasjon** — prøver alle vinkler ±90° fra nord (aldri opp-ned). For hver vinkel telles hvor mange POIs som faller innenfor synsfelt-rektangelet i meter-rom. Vinkelen med flest POIs vinner; ved likt antall velges den med tettest bounding-box.
 - **Pikselbasert synlighetssjekk** — `map.getBounds().contains()` er upålitelig med roterte kart. Templaten bruker `map.latLngToContainerPoint()` for å sjekke om et punkt faktisk er synlig.
 - **Retina-tiles** — bruker `{r}` i tile-URL for skarpe gatenavn på HiDPI/Retina-skjermer.
@@ -500,7 +500,7 @@ Templaten håndterer:
 
 - Print-CSS (A4 portrett, 10 mm margins, page-break mellom områder)
 - **Leaflet-kart med CARTO Voyager-tiles** (OSM native stiler, lesbare gatenavn)
-- Fast-skala-motor med adaptiv zoom (mål 16.0, min 15.0) og auto-rotasjon
+- Fast-skala-motor med låst zoom 16.0 og auto-rotasjon
 - Pikselbasert synlighetssjekk for POIs
 - 4-retnings pilmarkører (↑↓←→) for POIs utenfor synsfelt, med automatisk de-overlap
 - Nordpil med kollisjon-unngåelse (prøver 4 hjørner)
