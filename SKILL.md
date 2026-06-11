@@ -418,7 +418,7 @@ Kartet bruker **Leaflet med CARTO Voyager-fliser** som kartbakgrunn. Dette gir O
 
 Tile-URL: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png`
 
-Templaten legger på et subtilt sepia/desaturerings-filter (`sepia(0.22) saturate(0.7) brightness(1.03)`) for å gi flisene et varmere, print-vennlig utseende.
+Templaten legger på et nesten nøytralt filter (`saturate(0.92) brightness(1.02)`) — samme som Vadsø-kartet. Ikke legg på sepia eller kraftigere desaturering; det visker ut kontrasten mellom gater og bygninger og gjør kartet utvasket.
 
 Merk: flisene lastes fra CARTO sin tile-server, så HTML-en krever internettforbindelse ved første visning (flisene caches i nettleseren).
 
