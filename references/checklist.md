@@ -8,6 +8,8 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Mottatt gammelt kart (PDF/bilde) eller bekreftet at vi starter blankt
 - [ ] Identifisert alle synlige POIs fra gammelt kart
 - [ ] Lagt til flyplass, togstasjon og havn/hurtigrutekai hvis kommunen har dem
+- [ ] Gjort uttømmende kategorisøk i Google Maps (alle treff, ikke bare første side)
+- [ ] Filtrert bort ikke-turistrelevante bedrifter (regnskap, advokat, B2B osv.)
 - [ ] Lagret utkast i `outputs/kart-arbeid/punkter-utkast.json`
 
 ## Verifisering
@@ -28,6 +30,8 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 
 ## Tillegg
 
+- [ ] Presentert hele den nummererte listen gruppert per kategori
+- [ ] Under ~30 punkter for et kommunesenter? → bedt brukeren bekrefte dekningen
 - [ ] Spurt brukeren om punkter som mangler
 - [ ] Verifisert hvert tilleggspunkt (BRREG + Google Maps)
 

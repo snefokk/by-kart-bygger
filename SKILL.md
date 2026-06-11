@@ -58,10 +58,11 @@ Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gamm
 - For bilde: les bildet direkte med Read-verktøyet (modellen kan se bilder native)
 - Identifiser alle POIs (Points of Interest): bedrifter, severdigheter, overnatting, spisesteder, butikker, museer
 - Forsøk å lese kategori, navn og posisjon for hvert punkt
+- Det gamle kartet er **minimumslisten** over kandidater — alt som står der skal vurderes. Men bedrifter kan ha stengt siden kartet ble laget, så hvert punkt skal fortsatt gjennom BRREG- og Google Maps-verifiseringen i Trinn 2–3
 
 **Hvis det ikke er et gammelt kart**:
 
-- Ikke be brukeren krysse av for kategorier. Foreslå standardutvalget direkte: «Jeg tar med overnattingssteder, spisesteder, utesteder, butikker og de mest kjente severdighetene. Er det greit?» Brukeren justerer i fritekst.
+- Ikke be brukeren krysse av for kategorier. Foreslå standardutvalget direkte: «Jeg tar med overnattingssteder, spisesteder og kaféer, utesteder, butikker, treningssentre, spa og salonger, og de mest kjente severdighetene. Er det greit?» Brukeren justerer i fritekst.
 - Spør om navnet på kommunen hvis det ikke er oppgitt, og start fra Google Maps + lokal næringsforening
 
 **Sett opp en arbeids-liste** med foreløpige punkter slik:
@@ -79,6 +80,23 @@ Først, fastslå utgangspunktet ved å sjekke om brukeren har lastet opp et gamm
 Lagre dette i `outputs/kart-arbeid/punkter-utkast.json` for å holde oversikt.
 
 **Ta alltid med transportpunkter:** flyplass, togstasjon og havn/hurtigrutekai (kategori `other`) skal alltid med på kartet hvis kommunen har dem — også når de ligger langt utenfor sentrum. Ligger de utenfor kartutsnittet, rendrer templaten dem automatisk som pilmarkør ved kanten, med avstanden i km trykket under pila. Du trenger ikke gjøre noe spesielt utover å inkludere punktene med riktige koordinater.
+
+### Uttømmende kategorisøk (VIKTIG — ikke bare «de mest kjente»)
+
+Kartet skal dekke **alle turist-relevante bedrifter** i tettstedet — ikke bare de 4–5 mest kjente per kategori. Et kommunesenter som Vadsø har 60–70 relevante punkter; finner du bare 20, har du søkt for smalt.
+
+Gjør systematiske Google Maps-søk **per kategori**, og bla gjennom ALLE treff i resultatlisten, ikke bare første skjermbilde:
+
+- «butikker i <kommune>», «klesbutikk <kommune>», «bokhandel <kommune>», «blomsterbutikk <kommune>», «sportsbutikk <kommune>», «apotek <kommune>»
+- «restaurant <kommune>», «kafé <kommune>», «gatekjøkken <kommune>», «pub <kommune>»
+- «hotell <kommune>», «overnatting <kommune>», «camping <kommune>», «leiligheter <kommune>»
+- «frisør <kommune>», «spa <kommune>», «hudpleie <kommune>», «negler <kommune>»
+- «treningssenter <kommune>», «svømmehall <kommune>», «kino <kommune>»
+- «museum <kommune>», «severdigheter <kommune>»
+
+Næringsforeningens medlemsliste (hvis den finnes på nett) kan brukes som **supplement** for å fange opp navn du ellers ville oversett — men den er verken komplett eller filtrert, så bruk den aldri som hovedkilde.
+
+**Turist-relevant betyr:** butikker, spisesteder/kaféer, utesteder, overnatting, treningssentre, spa/salonger, severdigheter, aktiviteter og transport. **Skal IKKE med:** regnskapsførere, revisorer, advokater, eiendomsmeglere, håndverkere, B2B-bedrifter og kontorer uten kundebesøk.
 
 ## Trinn 2: Verifiser hver bedrift mot Brønnøysundregistrene
 
@@ -219,11 +237,13 @@ Identiske koordinater kan bety:
 
 ## Trinn 4: Spør brukeren om tilleggspunkter
 
-Når listen er verifisert og koordinat-satt, presenter den for brukeren via AskUserQuestion eller direkte i samtalen, og spør:
+Når listen er verifisert og koordinat-satt, presenter **alltid hele den nummererte listen gruppert per kategori** for brukeren — da er det lett å se hva som mangler. Spør:
 
 - «Er det noen punkter du vil legge til?»
 - «Er det noen kategorier som mangler?»
 - «Skal vi fjerne disse som ser ut til å være slettet i BRREG: [liste]?»
+
+**Rimelighetskontroll:** Det finnes ingen fasit for antall punkter — små tettsteder har naturlig få. Men havner du under ~30 punkter for et kommunesenter, skal du si det eksplisitt og be brukeren bekrefte dekningen: «Jeg fant bare N punkter — her er hele listen. Stemmer det, eller mangler det noe?» Ikke bygg kartet før brukeren har bekreftet.
 
 La brukeren legge til punkter i fritekst — du tar dem så gjennom samme verifisering (BRREG + Google Maps).
 
