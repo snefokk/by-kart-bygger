@@ -54,6 +54,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Sjekket at pilmarkører peker riktig retning og ikke overlapper
 - [ ] Sjekket at gatenavn er skarpe (retina-tiles)
 - [ ] Sjekket at kategori-listene i sidekolonnen ikke overlapper med kartet
+- [ ] Konsollen viser `[qr-sjekk] OK` (QR-koden er dekodbar)
 - [ ] Print-preview: bekreftet at side-skift fungerer
 
 ## Levering

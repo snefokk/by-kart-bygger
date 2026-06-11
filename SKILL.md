@@ -7,7 +7,18 @@ description: Lag et printbart A4-turistkart/bykart for en norsk kommune basert p
 
 Denne skillen tar deg gjennom hele prosessen med å lage et oppdatert, printbart A4-kart for en kommune: tolke et gammelt kart, verifisere at bedriftene fortsatt finnes, plassere dem riktig, og bygge HTML-en.
 
-All kommunikasjon med brukeren skjer på **norsk**.
+## Språk (VIKTIG)
+
+**Snakk samme språk som brukeren — for norske brukere betyr det norsk hele veien.** Dette gjelder ALT du skriver, ikke bare svar på spørsmål:
+
+- Statusmeldinger mens du jobber («Slår opp Vadsø Hotell i Brønnøysundregistrene …»)
+- Spørsmål og alternativer i AskUserQuestion
+- Oppsummeringer, rapporter og feilmeldinger
+- Forklaringer av hva du gjør og hvorfor
+
+Ikke bytt til engelsk underveis i arbeidet — det er forvirrende for brukeren. Tekniske begreper som config-feltnavn, kommandoer og filnavn forblir på engelsk som de er.
+
+Hvis brukeren starter samtalen på et annet språk enn norsk, følg brukerens språk i stedet.
 
 ## Hva trenger du før du starter
 
@@ -496,11 +507,14 @@ Templaten håndterer:
 - Målestokk-bar beregnet fra faktisk zoom
 - Kategorifargede markører (divIcon med tall)
 - 2-kolonne kategori-liste i sidekolonnen
-- QR-kode (qrcodejs)
+- QR-kode (qrcodejs) — genereres i 320 px med gjennomsiktig bakgrunn, vises/printes i 80 px for skarpe moduler
+- Automatisk QR-lesbarhets-sjekk (jsQR) — templaten dekoder sin egen QR-kode ved lasting og logger `[qr-sjekk] OK/FEIL` i konsollen; ved feil vises også et rødt varsel under QR-koden (kun på skjerm, ikke print)
 - Auto-spread for overlappende markører (spreadByAddress + spreadOverlapping)
 - Norsk + engelsk parallellkolonne i legend
 - «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
 - «Laget av / Made by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler
+
+**Etter bygging — sjekk QR-koden:** Åpne HTML-en i nettleser og se i DevTools-konsollen etter `[qr-sjekk] OK`. Står det `FEIL`, vises også et rødt varsel under QR-koden på siden — da må QR-en fikses (sjekk `qr_url` i config-en) før levering.
 
 ## Trinn 9: Lever filen
 

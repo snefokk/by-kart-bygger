@@ -11,6 +11,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
   /* ============================================================
      KOMMUNEKART – generert mal med fast-skala motor
@@ -291,7 +292,16 @@
     text-align: center;
     font-size: 7pt;
   }
-  .qr-box canvas, .qr-box img { display: block; margin: 0 auto 1mm; }
+  /* QR genereres i 320px for skarpe moduler, vises/printes i 80px */
+  .qr-box canvas, .qr-box img { display: block; margin: 0 auto 1mm; width: 80px; height: 80px; }
+  .qr-warning {
+    font-size: 6pt;
+    color: #B00020;
+    max-width: 30mm;
+    margin: 1mm auto 0;
+    text-align: center;
+  }
+  @media print { .qr-warning { display: none !important; } }
 
   /* "Laget av / Made by"-credit — under QR-koden i legend, som på Vadsø-kartet.
      Vertikal: label på én linje, logo midtstilt under. */
@@ -656,6 +666,40 @@ function makeIcon(p) {
     html: `<div class="poi-marker cat-${p.cat}${arrow}" title="${p.name || ''}">${p.id}${distHtml}</div>`,
     iconSize, iconAnchor,
   });
+}
+
+/* QR-sjekk (kun skjerm): dekoder den genererte QR-koden mot hvit bakgrunn
+   (slik en skanner ser den på papir) og sammenligner med qr_url.
+   Resultat logges som [qr-sjekk] i konsollen; feil gir også et synlig
+   varsel under QR-koden (skjules ved print). */
+function verifyQRCode(areaIdx) {
+  if (!CONFIG.qr_url || typeof jsQR === 'undefined') return;
+  const box = document.getElementById(`qr-${areaIdx}`);
+  if (!box) return;
+  const src = box.querySelector('img') || box.querySelector('canvas');
+  if (!src) return;
+  if (src.tagName === 'IMG' && !src.complete) {
+    setTimeout(() => verifyQRCode(areaIdx), 400);
+    return;
+  }
+  const size = 320;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  try { ctx.drawImage(src, 0, 0, size, size); } catch (e) { return; }
+  const px = ctx.getImageData(0, 0, size, size);
+  const res = jsQR(px.data, size, size);
+  if (res && res.data === CONFIG.qr_url) {
+    console.log(`[qr-sjekk] OK — QR dekodet til ${res.data}`);
+  } else {
+    console.warn(`[qr-sjekk] FEIL — QR kunne ikke dekodes${res ? ` (dekodet til: ${res.data})` : ''}`);
+    const warn = document.createElement('div');
+    warn.className = 'qr-warning';
+    warn.textContent = '⚠ QR-koden kunne ikke verifiseres — test med mobilkamera før print';
+    box.parentElement.appendChild(warn);
+  }
 }
 
 function spreadOverlapping(places, minDistMeters, iterations) {
@@ -1232,10 +1276,11 @@ function initAreaMaps(area, areaIdx) {
 
   if (CONFIG.qr_url) {
     new QRCode(document.getElementById(`qr-${areaIdx}`), {
-      text: CONFIG.qr_url, width: 80, height: 80,
+      text: CONFIG.qr_url, width: 320, height: 320,
       colorDark: '#000', colorLight: 'rgba(255,255,255,0)',
       correctLevel: QRCode.CorrectLevel.M
     });
+    setTimeout(() => verifyQRCode(areaIdx), 600);
   }
 }
 
@@ -1294,10 +1339,11 @@ function initSingleMap(area, areaIdx) {
 
   if (CONFIG.qr_url) {
     new QRCode(document.getElementById(`qr-${areaIdx}`), {
-      text: CONFIG.qr_url, width: 80, height: 80,
+      text: CONFIG.qr_url, width: 320, height: 320,
       colorDark: '#000', colorLight: 'rgba(255,255,255,0)',
       correctLevel: QRCode.CorrectLevel.M,
     });
+    setTimeout(() => verifyQRCode(areaIdx), 600);
   }
   console.log(`[fast-skala] Area ${areaIdx}: zoom=${REFERENCE_ZOOM}, bearing=${bearing}°, ${insideList.length}/${area.places.length} synlig`);
 }
