@@ -495,7 +495,7 @@ Templaten håndterer:
 - Auto-spread for overlappende markører (spreadByAddress + spreadOverlapping)
 - Norsk + engelsk parallellkolonne i legend
 - «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
-- Snefokk-logo og «snefokk.com»-lenke i bunnen av hver side — innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler
+- «Laget av / Made by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler
 
 ## Trinn 9: Lever filen
 
