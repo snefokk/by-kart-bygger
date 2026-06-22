@@ -1360,8 +1360,17 @@ function initSingleMap(area, areaIdx) {
   if (area.rotation != null) { bearing = area.rotation; }
   else { bearing = findBestBearing(area.places, dims.w_m, dims.h_m); }
 
-  const centerLat = area.places.reduce((s,p) => s + p.lat, 0) / area.places.length;
-  const centerLng = area.places.reduce((s,p) => s + p.lng, 0) / area.places.length;
+  // Robust sentrering: bruk MEDIANEN av lat/lng, ikke gjennomsnittet. Et gjennomsnitt
+  // dras mot spredte punkter (severdighet i utkanten, bensinstasjon ved innfartsåren
+  // o.l.), slik at den tette POI-klyngen kan havne utenfor kartkanten og bli til piler.
+  // Medianen blir liggende der flertallet av punktene er, så klyngen forblir i utsnittet.
+  const median = arr => {
+    const s = [...arr].sort((a, b) => a - b);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  };
+  const centerLat = median(area.places.map(p => p.lat));
+  const centerLng = median(area.places.map(p => p.lng));
 
   const map = L.map(`map-${areaIdx}`, {
     ...STATIC_MAP_OPTS,

@@ -1,7 +1,7 @@
 {
   "_kommentar": "Snefokk standard-branding ('standard'-valget i skillen, Trinn 6 Alternativ B). Snefokks egen visuelle profil: Newsreader-tittel, Inter brødtekst, lilla aksent, krem bakgrunn, dempet POI-palett. Feltet 'style': 'snefokk' aktiverer stil A-skinnet i kart_template.html (scopet til html.snefokk-style). Hvis kunden har egen nettside å hente branding fra, brukes Alternativ A i stedet (uten style-feltet).",
   "style": "snefokk",
-  "tittel_topp": "KOMMUNEN",
+  "tittel_topp": "Kommunen",
   "tittel_bunn": "Bykart · City Map",
   "logo_url": null,
   "font_url": "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&display=swap",

@@ -442,10 +442,12 @@ Brand-JSON-strukturen er:
   },
   "font_url": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap",
   "font_family": "'Open Sans', system-ui, sans-serif",
-  "tittel_topp": "BERLEVÅG",
+  "tittel_topp": "Berlevåg",
   "tittel_bunn": "Bykart · City Map"
 }
 ```
+
+**VIKTIG — tittel_topp skal ha normal kasus, ikke versaler.** Skriv stedsnavnet med stor forbokstav og resten små: «Berlevåg», «Vardø», «Tana bru», «Honningsvåg». IKKE bruk store bokstaver («TANA BRU», «VARDØ») — den store Newsreader-serif-tittelen er designet for normal kasus og ser feil ut i versaler. Behold naturlig kasus for flerordsnavn (f.eks. «Tana bru», ikke «Tana Bru»), med mindre stedsnavnet offisielt har stor bokstav i andre ord.
 
 **QR-kode:** Spør samtidig hvilken nettside QR-koden på kartet skal peke til (typisk kommunens turistside eller næringsforeningens side). Lagre URL-en som `qr_url` og en kort visningstekst som `qr_label` i config-en.
 
@@ -469,7 +471,7 @@ Bygg ved hjelp av `templates/kart_template.html` og `scripts/build_html.py`. Lag
   "qr_url": "https://www.vardo.kommune.no/turist-og-besokende",
   "qr_label": "vardo.kommune.no",
   "brand": {
-    "tittel_topp": "VARDØ",
+    "tittel_topp": "Vardø",
     "tittel_bunn": "Turistkart · Tourist map",
     "logo_url": null,
     "font_url": "https://fonts.googleapis.com/css2?family=...",
