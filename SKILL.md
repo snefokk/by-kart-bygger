@@ -532,7 +532,7 @@ Templaten håndterer:
 - Auto-spread for overlappende markører (spreadByAddress + pixelSpread) — kjøres pikselbasert på alle kartmoduser (oversikt, inset, single_map)
 - Norsk + engelsk parallellkolonne i legend
 - «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
-- «Kart av / Map by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler. Logoen er lenket til `https://www.snefokk.com/kart` (åpnes i ny fane på skjerm/PDF; lenken er usynlig ved print). Ordlyden «Kart av» (ikke «Laget av») er bevisst: Snefokk tilrettelegger/setter opp punktene på eksisterende kartdata — selve kartflisene er © OpenStreetMap © CARTO, kreditert i kartets hjørne.
+- «Kart av / Map by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler. Logoen er lenket til `https://snefokk.com/kart/` (åpnes i ny fane på skjerm/PDF; lenken er usynlig ved print). Ordlyden «Kart av» (ikke «Laget av») er bevisst: Snefokk tilrettelegger/setter opp punktene på eksisterende kartdata — selve kartflisene er © OpenStreetMap © CARTO, kreditert i kartets hjørne.
 
 **Etter bygging — sjekk QR-koden:** Åpne HTML-en i nettleser og se i DevTools-konsollen etter `[qr-sjekk] OK`. Står det `FEIL`, vises også et rødt varsel under QR-koden på siden — da må QR-en fikses (sjekk `qr_url` i config-en) før levering.
 
