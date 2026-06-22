@@ -549,6 +549,97 @@
     }
     .page:last-of-type { page-break-after: auto !important; }
   }
+
+  /* ============================================================
+     SNEFOKK STANDARD-STIL ("standard"-valget i skillen, Trinn 6 B).
+     Aktiveres når CONFIG.brand.style === 'snefokk' — da legges
+     klassen .snefokk-style på <html>. Alt under er scopet til
+     html.snefokk-style, så kommune-branding (Alternativ A) er
+     fullstendig uendret.
+     ============================================================ */
+  html.snefokk-style {
+    --cat-eat:      #8B3A2F;
+    --cat-stay:     #3A4F6B;
+    --cat-museum:   #3D1F4D;
+    --cat-shop:     #B58A50;
+    --cat-beauty:   #8B4A6F;
+    --cat-activity: #4A6B3F;
+    --cat-other:    #7D7068;
+    --brand-serif:  'Newsreader', Georgia, serif;
+  }
+  html.snefokk-style .header {
+    border-bottom: 1px solid var(--brand-accent);
+  }
+  html.snefokk-style .header .title-top {
+    font-family: var(--brand-serif);
+    font-size: 40pt;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  html.snefokk-style .area-title {
+    background: transparent;
+    color: var(--brand-text);
+    font-family: var(--brand-serif);
+    font-size: 12pt;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    padding: 0 0 1.5mm 0;
+    border-bottom: 1px solid var(--brand-accent);
+    border-radius: 0;
+  }
+  html.snefokk-style .legend-category h3 {
+    font-family: var(--brand-serif);
+    font-weight: 500;
+  }
+  html.snefokk-style .map-container {
+    border: 1px solid rgba(26, 26, 26, 0.18);
+  }
+  html.snefokk-style .print-toolbar button {
+    background: transparent;
+    color: var(--brand-text);
+    border: 1px solid var(--brand-text);
+    border-radius: 999px;
+    padding: 7px 16px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  html.snefokk-style .print-toolbar button.bw {
+    background: transparent;
+  }
+  html.snefokk-style .print-toolbar button:hover {
+    background: var(--brand-accent);
+    color: var(--brand-cream);
+    border-color: var(--brand-accent);
+  }
+
+  /* Kontroll-rad: adressefelt + print-knapper på samme nivå, under bynavnet.
+     Bynavnet (header) kommer dermed alltid aller først på siden. */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    flex-wrap: nowrap;
+    margin-bottom: 2mm;
+  }
+  .controls-row .address-toolbar,
+  .controls-row .print-toolbar {
+    max-width: none;
+    margin: 0;
+    border-top: 0;
+    padding: 4px 0;
+  }
+  .controls-row .address-toolbar {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .controls-row .address-toolbar input[type="text"] { flex: 1 1 130px; min-width: 110px; }
+  .controls-row .print-toolbar { flex: 0 0 auto; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; }
+  .controls-row .print-toolbar .hint { display: none; }
+  /* Kompakte print-knapper så de får plass ved siden av adressefeltet på A4 */
+  .controls-row .print-toolbar button { padding: 5px 10px; font-size: 8pt; letter-spacing: 0.02em; }
+  @media print { .controls-row { display: none !important; } }
 </style>
 </head>
 <body>
@@ -570,6 +661,12 @@
 
 <script>
 const CONFIG = __CONFIG_JSON__;
+
+/* "standard"-valget i skillen: Snefokks egen stil (krem, lilla aksent,
+   Newsreader-tittel, dempet POI-palett). Aktiveres når brand.style === 'snefokk'. */
+if (CONFIG.brand && CONFIG.brand.style === 'snefokk') {
+  document.documentElement.classList.add('snefokk-style');
+}
 
 /* ============================================================
    FAST-SKALA MOTOR
@@ -1319,6 +1416,20 @@ function initSingleMap(area, areaIdx) {
 function init() {
   const root = document.getElementById('root');
   CONFIG.areas.forEach((area, i) => renderArea(area, i, root));
+
+  // Flytt kontrollene (adressefelt + print-knapper) ned under bynavnet, på samme
+  // nivå (én rad), slik at bynavnet alltid kommer aller først på siden.
+  // Begge er skjult på print, og raden kollapser da til ingenting.
+  const firstHeader = root.querySelector('.page .header');
+  const addr = document.getElementById('addressToolbar');
+  const printBar = document.getElementById('printToolbar');
+  if (firstHeader && (addr || printBar)) {
+    const row = document.createElement('div');
+    row.className = 'controls-row';
+    if (addr) row.appendChild(addr);
+    if (printBar) row.appendChild(printBar);
+    firstHeader.insertAdjacentElement('afterend', row);
+  }
 }
 
 function printColor() {

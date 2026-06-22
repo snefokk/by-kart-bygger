@@ -423,9 +423,10 @@ RGB-verdier fra `getComputedStyle` er på formen `rgb(15, 47, 111)` — konverte
 
 **Alternativ B: Standard** (bare hvis brukeren ikke har en nettside)
 
-- Omtal alltid dette alternativet som «standard» overfor brukeren — aldri «snefokk-generisk»
-- Bruk `templates/snefokk-generisk/style.json`
-- Dette gir en pen, nøytral grønn-cream-stil
+- Omtal alltid dette alternativet som «standard» overfor brukeren — aldri «snefokk-standard»
+- Bruk `templates/snefokk-standard/style.json` — Snefokks egen profil: Newsreader-tittel, Inter brødtekst, lilla aksent (#3D1F4D), krem bakgrunn (#F3EEEA) og dempet POI-palett
+- **VIKTIG:** ta med feltet `"style": "snefokk"` fra style.json inn i config-ens `brand`-objekt. Det aktiverer stil A-skinnet (krem header, lilla underline på område-titler, pille-print-knapper, dempet palett) som ligger i `kart_template.html` scopet til `html.snefokk-style`. Uten dette feltet får du grunnstilen, ikke Snefokk-stilen.
+- Den eldre, nøytrale grønn-cream-fila `templates/snefokk-generisk/style.json` beholdes som valgfri fallback, men er ikke lenger standard.
 
 Brand-JSON-strukturen er:
 
