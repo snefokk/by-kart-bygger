@@ -529,10 +529,10 @@ Templaten håndterer:
 - 2-kolonne kategori-liste i sidekolonnen
 - QR-kode (qrcodejs) — genereres i 320 px med gjennomsiktig bakgrunn, vises/printes i 80 px for skarpe moduler
 - Automatisk QR-lesbarhets-sjekk (jsQR) — templaten dekoder sin egen QR-kode ved lasting og logger `[qr-sjekk] OK/FEIL` i konsollen; ved feil vises også et rødt varsel under QR-koden (kun på skjerm, ikke print)
-- Auto-spread for overlappende markører (spreadByAddress + spreadOverlapping)
+- Auto-spread for overlappende markører (spreadByAddress + pixelSpread) — kjøres pikselbasert på alle kartmoduser (oversikt, inset, single_map)
 - Norsk + engelsk parallellkolonne i legend
 - «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
-- «Laget av / Made by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler
+- «Kart av / Map by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler. Logoen er lenket til `https://www.snefokk.com/kart` (åpnes i ny fane på skjerm/PDF; lenken er usynlig ved print). Ordlyden «Kart av» (ikke «Laget av») er bevisst: Snefokk tilrettelegger/setter opp punktene på eksisterende kartdata — selve kartflisene er © OpenStreetMap © CARTO, kreditert i kartets hjørne.
 
 **Etter bygging — sjekk QR-koden:** Åpne HTML-en i nettleser og se i DevTools-konsollen etter `[qr-sjekk] OK`. Står det `FEIL`, vises også et rødt varsel under QR-koden på siden — da må QR-en fikses (sjekk `qr_url` i config-en) før levering.
 
@@ -554,7 +554,7 @@ Templaten støtter også manuell overstyring per POI (`arrow: 'right'` osv. i co
 
 ### Markører som overlapper
 
-`spreadByAddress`-funksjonen grupperer POIs med identiske koordinater i en sirkel. `spreadOverlapping`-funksjonen skyver deretter gjenværende overlapp fra hverandre. Begge kjøres automatisk.
+`spreadByAddress`-funksjonen grupperer POIs med identiske koordinater (samme bygg/adresse) og fanner dem ut i en sirkel. Deretter kjører `pixelSpread` i **pikselrom** etter at kartet har fått sin endelige zoom og rotasjon: markører som ligger nærmere enn 32 px dyttes fra hverandre (markører ved kanten dytter kun den andre, og helt sammenfallende punkter får en deterministisk retning). Dette kjøres på alle tre kartmoduser (oversikt, inset, single_map), så markører overlapper ikke uansett zoom-nivå. Begge kjøres automatisk.
 
 ### Punkter helt på kanten av et inset-kart
 
