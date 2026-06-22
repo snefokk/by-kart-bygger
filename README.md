@@ -30,12 +30,20 @@ Bedriftene verifiseres som aktive i Brønnøysundregistrene, og koordinater slå
 | Du kjører skillen selv i Claude Cowork — bygg og oppdater så ofte du vil | Snefokk bygger, tilpasser profilen og leverer, med én tilbakemeldingsrunde |
 | **Ferdig på ~20 minutter** (med god internettforbindelse) | **Klart innen typisk en uke** |
 
+## Hva du trenger (for å gjøre det selv)
+
+- Et aktivt **Claude Pro**-abonnement (eller høyere) — skillen kjører i Claude Cowork / Claude Code
+- **Google Chrome** med «Claude in Chrome»-utvidelsen, for koordinatoppslag i Google Maps *(anbefalt — uten Chrome finnes en enklere, litt mindre presis OSM-fallback)*
+- **Internett-tilgang**
+- **Python 3** — for å bygge selve HTML-en (standardbibliotek, ingen `pip install`; finnes på de fleste maskiner)
+
+Skillen i seg selv er gratis og åpen kildekode.
+
 ## Kom i gang (gjør det selv)
 
-1. **Du trenger et aktivt Claude-abonnement** (Pro eller Max). Skillen kjører inne i Claude Cowork / Claude Code. Skillen i seg selv er gratis og åpen kildekode.
-2. **Last ned skillen** — klon eller last ned dette repoet.
-3. **Installer i Claude Cowork** — pek Cowork mot skill-mappa.
-4. **Følg `SKILL.md`** — den tar deg steg for steg gjennom steder, kartavgrensning og selve byggingen.
+1. **Last ned skillen** — klon eller last ned dette repoet.
+2. **Installer i Claude Cowork** — pek Cowork mot skill-mappa.
+3. **Følg `SKILL.md`** — den tar deg steg for steg gjennom steder, kartavgrensning og selve byggingen.
 
 ## Bygg fra en konfig-fil (avansert)
 
