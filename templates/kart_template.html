@@ -1047,6 +1047,29 @@ function renderArea(area, areaIdx, root) {
   setTimeout(() => initAreaMaps(area, areaIdx), 50);
 }
 
+/* Hold hover-tooltip innenfor kartet: når den åpnes nær kanten, dytt den
+   inn slik at den ikke klippes av .map-container (overflow:hidden), og løft
+   z-index så den alltid ligger oppå nabo-elementer. Måler faktiske rektangler,
+   så det funker uansett rotasjon. */
+function keepTooltipInView(map) {
+  map.on('tooltipopen', function (e) {
+    var tip = e.tooltip && e.tooltip._container;
+    if (!tip) return;
+    tip.style.setProperty('z-index', '2000', 'important');
+    requestAnimationFrame(function () {
+      var cr = map.getContainer().getBoundingClientRect();
+      var tr = tip.getBoundingClientRect();
+      var pad = 4, dx = 0, dy = 0;
+      if (tr.right > cr.right - pad) dx = (cr.right - pad) - tr.right;
+      else if (tr.left < cr.left + pad) dx = (cr.left + pad) - tr.left;
+      if (tr.bottom > cr.bottom - pad) dy = (cr.bottom - pad) - tr.bottom;
+      else if (tr.top < cr.top + pad) dy = (cr.top + pad) - tr.top;
+      if (dx) tip.style.marginLeft = ((parseFloat(tip.style.marginLeft) || 0) + dx) + 'px';
+      if (dy) tip.style.marginTop = ((parseFloat(tip.style.marginTop) || 0) + dy) + 'px';
+    });
+  });
+}
+
 function initAreaMaps(area, areaIdx) {
   if (area.single_map) return initSingleMap(area, areaIdx);
 
@@ -1110,6 +1133,7 @@ function initAreaMaps(area, areaIdx) {
   }
   // Registrer hovedkartet for adresse-markering
   MAP_REGISTRY.maps.push({ map: mainMap, type: 'main', areaIdx });
+  keepTooltipInView(mainMap);
 
   // Plasser markører — med pilmarkører for POIs utenfor synsfeltet
   setTimeout(() => {
@@ -1215,6 +1239,7 @@ function initAreaMaps(area, areaIdx) {
     addScaleBar(`map-inset-${areaIdx}`, getContainerMeters().mpp);
     // Registrer inset-kartet for adresse-markering
     MAP_REGISTRY.maps.push({ map: insetMap, type: 'inset', areaIdx });
+    keepTooltipInView(insetMap);
   }
 
   addNorthArrow(`map-${areaIdx}`, mainMap, area.places);
@@ -1253,6 +1278,7 @@ function initSingleMap(area, areaIdx) {
   });
   L.tileLayer(TILE_URL, { maxZoom: 20, attribution: TILE_ATTR }).addTo(map);
   map.setView([centerLat, centerLng], REFERENCE_ZOOM);
+  keepTooltipInView(map);
 
   const { mapSize, isOnScreen } = makeVisibilityChecker(map);
   const insideList = [], outsideList = [];
