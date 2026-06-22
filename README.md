@@ -27,8 +27,8 @@ Bedriftene verifiseres som aktive i Brønnøysundregistrene, og koordinater slå
 | Gjør det selv (dette repoet) | La Snefokk gjøre jobben |
 | --- | --- |
 | Gratis — krever et Claude-abonnement | Bestill på **[snefokk.com/kart](https://snefokk.com/kart)** |
-| Du kjører skillen i Claude Cowork | Snefokk bygger, tilpasser profilen og leverer |
-| Bygg og oppdater så ofte du vil | Klart innen typisk en uke, med én tilbakemeldingsrunde |
+| Du kjører skillen selv i Claude Cowork — bygg og oppdater så ofte du vil | Snefokk bygger, tilpasser profilen og leverer, med én tilbakemeldingsrunde |
+| **Ferdig på ~20 minutter** (med god internettforbindelse) | **Klart innen typisk en uke** |
 
 ## Kom i gang (gjør det selv)
 
@@ -36,8 +36,6 @@ Bedriftene verifiseres som aktive i Brønnøysundregistrene, og koordinater slå
 2. **Last ned skillen** — klon eller last ned dette repoet.
 3. **Installer i Claude Cowork** — pek Cowork mot skill-mappa.
 4. **Følg `SKILL.md`** — den tar deg steg for steg gjennom steder, kartavgrensning og selve byggingen.
-
-**Tid:** Et komplett kart tar typisk rundt **20 minutter** å bygge med god internettforbindelse.
 
 ## Bygg fra en konfig-fil (avansert)
 
