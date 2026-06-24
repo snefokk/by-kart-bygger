@@ -470,6 +470,7 @@ Bygg ved hjelp av `templates/kart_template.html` og `scripts/build_html.py`. Lag
   "tittel": "Vardø Turistkart",
   "qr_url": "https://www.vardo.kommune.no/turist-og-besokende",
   "qr_label": "vardo.kommune.no",
+  "geo": { "country": "Norge", "country_code": "no", "lang": "no" },
   "brand": {
     "tittel_topp": "Vardø",
     "tittel_bunn": "Turistkart · Tourist map",
@@ -509,6 +510,10 @@ Bygg ved hjelp av `templates/kart_template.html` og `scripts/build_html.py`. Lag
   ]
 }
 ```
+
+**Kategorier og farger:** Du kan fritt definere egne kategorier med egne `id`-er — ikke bare de norske standard-IDene (`eat`/`stay`/`museum`/`shop`/`beauty`/`activity`/`other`). For standard-IDene bruker malen sin innebygde palett (og Snefokk-skinnets dempede variant). For *alle andre* `id`-er leser malen fargen direkte fra `color`-feltet i `categories`, så markørene og legend-tallene blir farget riktig. Det betyr at utenlandske kart (f.eks. spanske `sight`/`church`/`bar`) MÅ ha et `color`-felt per kategori — uten det blir markørene fargeløse.
+
+**`geo` (land for adressesøk):** Feltet `geo` styrer «Marker din adresse»-funksjonen i det ferdige kartet. Utelater du det, antar malen Norge (`country: "Norge"`, `country_code: "no"`) — riktig for alle norske kommunekart. For kart utenfor Norge MÅ du sette `geo`, ellers finner ikke adressesøket noe: f.eks. `"geo": { "country": "España", "country_code": "es", "lang": "es" }`. `country_code` er ISO 3166-1 alpha-2 (no, se, dk, es, fr …) og begrenser Nominatim-søket til det landet; `lang` styrer `Accept-Language`.
 
 Bygg HTML-en med build-scriptet:
 
@@ -572,7 +577,7 @@ Hvis auto-rotasjonen ikke gir godt nok resultat (f.eks. en veldig lang, smal by)
 Det ferdige kartet har en innebygd funksjon som lar sluttbrukere markere en valgfri adresse på kartet før de printer:
 
 - **Adressefelt** øverst på siden (under print-knappene) med «Marker din adresse»-label og «Vis på kart»-knapp
-- **Geocoding** via Nominatim (OpenStreetMap) — kommunenavnet fra `brand.tittel_topp` legges automatisk til søket
+- **Geocoding** via Nominatim (OpenStreetMap) — stedsnavnet fra `brand.tittel_topp` legges automatisk til søket. Land hentes fra `geo`-feltet i config (standard Norge hvis `geo` mangler) — for utenlandske kart MÅ `geo.country` + `geo.country_code` settes, ellers begrenses søket til Norge og finner ingenting
 - **Stjerne-markør** (★) i accent-farge plasseres på alle kart der adressen er synlig (hovedkart + inset)
 - **«Du er her / You are here»**-boks i legend-kolonnen, med adressen — vises bare når en adresse er markert
 - **«Fjern»-knapp** fjerner markør og legend-boks

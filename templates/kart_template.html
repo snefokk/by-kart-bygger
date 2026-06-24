@@ -668,6 +668,26 @@ if (CONFIG.brand && CONFIG.brand.style === 'snefokk') {
   document.documentElement.classList.add('snefokk-style');
 }
 
+/* Kategori-farger: malen har innebygd CSS for de norske standard-kategoriene
+   (eat/stay/museum/shop/beauty/activity/other). Kart med EGNE kategori-IDer
+   (f.eks. utenlandske kart: sight/church/bar …) ville ellers fått fargeløse
+   markører. Her genereres CSS fra color-feltet i config for alle kategori-IDer
+   som ikke allerede dekkes av malen — så de norske/Snefokk-kartene er uendret. */
+(function injectCategoryColors() {
+  const BUILTIN = new Set(['eat', 'stay', 'museum', 'shop', 'beauty', 'activity', 'other']);
+  const rules = [];
+  for (const c of (CONFIG.categories || [])) {
+    if (!c || !c.id || BUILTIN.has(c.id) || !c.color) continue;
+    rules.push(`.poi-marker.cat-${c.id}{background:${c.color};}`);
+    rules.push(`.legend-num.cat-${c.id}{background:${c.color};}`);
+  }
+  if (rules.length) {
+    const st = document.createElement('style');
+    st.textContent = rules.join('\n');
+    document.head.appendChild(st);
+  }
+})();
+
 /* ============================================================
    FAST-SKALA MOTOR
    Referanse-zoom: 16.0 (Vadsø inset-standard)
@@ -1488,18 +1508,24 @@ async function geocodeAddress() {
   removeAddress();
   document.getElementById('addrInput').value = input;
 
-  // Hent kommunenavn fra config
-  const kommune = CONFIG.brand?.tittel_topp || '';
-  const query = `${input}, ${kommune}, Norge`;
+  // Hent sted + land fra config. CONFIG.geo styrer land for ikke-norske kart;
+  // mangler den, faller vi tilbake til Norge (uendret for alle norske kart).
+  const sted = CONFIG.brand?.tittel_topp || '';
+  const geo = CONFIG.geo || {};
+  const landNavn = geo.country || 'Norge';
+  const landKode = (geo.country_code || 'no').toLowerCase();
+  const sprak = geo.lang || 'no';
+  const query = `${input}, ${sted}, ${landNavn}`;
 
   status.textContent = 'Søker etter adresse…';
   status.className = 'addr-status';
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?` +
-      `format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=no`;
+      `format=json&q=${encodeURIComponent(query)}&limit=1` +
+      (landKode ? `&countrycodes=${encodeURIComponent(landKode)}` : '');
     const resp = await fetch(url, {
-      headers: { 'Accept-Language': 'no,en' }
+      headers: { 'Accept-Language': `${sprak},en` }
     });
     const data = await resp.json();
 
