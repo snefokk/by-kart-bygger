@@ -40,7 +40,9 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 - [ ] Geografisk clustering ferdig — bestemt antall sider
 - [ ] Hver side har en områdetittel
 - [ ] For tette sentrum: bestemt om inset-kart trengs
-- [ ] For små tettsteder (< ~1 km): satt `single_map: true` med auto-rotasjon
+- [ ] **Zoom-16-test kjørt før modusvalg**: telt hvor mange POIs som får plass i ~700 m-vinduet rundt medianpunktet. ≥ halvparten → `single_map` er ok; < halvparten → overview + inset (Trinn 5a)
+- [ ] `single_map` KUN når minst halvparten faktisk får plass ved zoom 16 (husk: `single_map` ignorerer `area.zoom` — kan ikke zoomes ut)
+- [ ] For overview+inset på spredt by: satt `area.bounds` eksplisitt til bypunkt-boksen så alle bypunkter fitter uten piler (outliers som flyplass holdt utenfor bounds → én kantpil)
 - [ ] Sjekket at auto-rotasjon gir fornuftig resultat (evt. satt `rotation` manuelt)
 - [ ] POIs utenfor synsfeltet håndteres automatisk som pilmarkører
 
@@ -54,7 +56,7 @@ Bruk denne listen for å holde tritt mens du går gjennom flyten.
 
 - [ ] Bygget HTML med `build_html.py`
 - [ ] Åpnet HTML i nettleser og bekreftet at alle markører er synlige
-- [ ] Sjekket debug-overlayet: zoom 16, bearing, antall synlige/utenfor
+- [ ] Sjekket debug-overlayet / konsoll-linja `[fast-skala] … X/Y synlig`: **X må være ≥ halvparten av Y.** Er flertallet piler → feil modus, bygg om som overview+inset (eller utvid `area.bounds`)
 - [ ] Sjekket at pilmarkører peker riktig retning og ikke overlapper
 - [ ] Sjekket at gatenavn er skarpe (retina-tiles)
 - [ ] Sjekket at kategori-listene i sidekolonnen ikke overlapper med kartet

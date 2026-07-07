@@ -1274,21 +1274,12 @@ function initAreaMaps(area, areaIdx) {
   }, 100);
 
   if (area.inset) {
-    let tightBounds;
-    if (insetPlaces.length >= 2) {
-      const lats = insetPlaces.map(p => p.lat);
-      const lngs = insetPlaces.map(p => p.lng);
-      const padLat = (Math.max(...lats) - Math.min(...lats)) * 0.03 || 0.0005;
-      const padLng = (Math.max(...lngs) - Math.min(...lngs)) * 0.03 || 0.0010;
-      tightBounds = [
-        [Math.min(...lats) - padLat, Math.min(...lngs) - padLng],
-        [Math.max(...lats) + padLat, Math.max(...lngs) + padLng],
-      ];
-    } else {
-      tightBounds = area.inset.bounds;
-    }
-
-    L.rectangle(tightBounds, { className: 'inset-frame', interactive: false }).addTo(mainMap);
+    // MERK: Rammen som viser insett-utsnittet på oversikten tegnes IKKE fra en
+    // POI-bounding-box. Den ville ikke matchet det insettet faktisk viser, fordi
+    // insettet (a) sentreres på POI-tyngdepunktet, ikke bbox-senteret, (b) rendres
+    // ved fast zoom 16 med container-styrt størrelse — ikke POI-boksen — og (c)
+    // roteres med insetBearing. Rammen utledes derfor fra insett-kartets EGNE fire
+    // hjørner (containerPointToLatLng) lenger ned, så den matcher eksakt.
 
     // Auto-rotasjon for inset (samme logikk som single_map)
     const insetContainerEl = document.getElementById(`map-inset-${areaIdx}`);
@@ -1328,6 +1319,18 @@ function initAreaMaps(area, areaIdx) {
     // Plasser markører — med piksel-basert overlap-sjekk
     setTimeout(() => {
       const { mapSize, isOnScreen } = makeVisibilityChecker(insetMap);
+
+      // Tegn insett-rammen på oversikten fra insettets FAKTISKE viewport-hjørner.
+      // containerPointToLatLng er rotasjons-bevisst (leaflet-rotate), så polygonet
+      // følger insettets rotasjon, sentrering, zoom og zoom_boost eksakt.
+      const frameCorners = [
+        insetMap.containerPointToLatLng([0, 0]),
+        insetMap.containerPointToLatLng([mapSize.x, 0]),
+        insetMap.containerPointToLatLng([mapSize.x, mapSize.y]),
+        insetMap.containerPointToLatLng([0, mapSize.y]),
+      ];
+      L.polygon(frameCorners, { className: 'inset-frame', interactive: false }).addTo(mainMap);
+
       const insetInside = [], insetOutside = [];
       for (const p of insetPlaces) {
         if (isOnScreen(p.lat, p.lng)) {
@@ -1349,7 +1352,7 @@ function initAreaMaps(area, areaIdx) {
       if (insetOutside.length) {
         placeEdgeMarkers(insetOutside, insetMap, mapSize, insetCenterLat, insetCenterLng);
       }
-      console.log(`[inset] Area ${areaIdx}: zoom=${bestZoom}, bearing=${insetBearing}°, ${insetInside.length}/${insetPlaces.length} synlig`);
+      console.log(`[inset] Area ${areaIdx}: zoom=${insetMap.getZoom()}, bearing=${insetBearing}°, ${insetInside.length}/${insetPlaces.length} synlig`);
     }, 200);
 
     addNorthArrow(`map-inset-${areaIdx}`, insetMap, insetPlaces);
