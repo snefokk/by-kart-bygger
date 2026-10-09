@@ -700,9 +700,9 @@ const REFERENCE_ZOOM = 16.0;
 const MAP_REGISTRY = { maps: [], addrMarkers: [] };
 
 // Retina-klare tiles
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const TILE_URL_NOLABELS = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
-const TILE_ATTR = '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a>';
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_URL_NOLABELS = TILE_URL; // OSM har ingen variant uten navn
+const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 const STATIC_MAP_OPTS = {
   zoomControl: false, scrollWheelZoom: false, dragging: false,
@@ -1212,7 +1212,7 @@ function initAreaMaps(area, areaIdx) {
   ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
     if (mainMap[h] && mainMap[h].disable) mainMap[h].disable();
   });
-  L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTR }).addTo(mainMap);
+  L.tileLayer(TILE_URL, { maxZoom: 19, maxNativeZoom: 19, attribution: TILE_ATTR }).addTo(mainMap);
 
   // Overview bounds: bruk konfig-bounds hvis oppgitt, ellers auto-tight
   let overviewBounds;
@@ -1304,7 +1304,7 @@ function initAreaMaps(area, areaIdx) {
     ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
       if (insetMap[h] && insetMap[h].disable) insetMap[h].disable();
     });
-    L.tileLayer(TILE_URL, { maxZoom: 20 }).addTo(insetMap);
+    L.tileLayer(TILE_URL, { maxZoom: 20, maxNativeZoom: 19 }).addTo(insetMap);
     const insetCenterLat = insetPlaces.reduce((s,p) => s + p.lat, 0) / insetPlaces.length;
     const insetCenterLng = insetPlaces.reduce((s,p) => s + p.lng, 0) / insetPlaces.length;
 
@@ -1405,7 +1405,7 @@ function initSingleMap(area, areaIdx) {
   ['scrollWheelZoom','touchZoom','doubleClickZoom','boxZoom','keyboard','dragging'].forEach(h => {
     if (map[h] && map[h].disable) map[h].disable();
   });
-  L.tileLayer(TILE_URL, { maxZoom: 20, attribution: TILE_ATTR }).addTo(map);
+  L.tileLayer(TILE_URL, { maxZoom: 20, maxNativeZoom: 19, attribution: TILE_ATTR }).addTo(map);
   map.setView([centerLat, centerLng], REFERENCE_ZOOM);
   keepTooltipInView(map);
 
