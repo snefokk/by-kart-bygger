@@ -41,7 +41,7 @@ Sjekk at disse er tilgjengelige før du begynner; hvis ikke, gi brukeren beskjed
 4. Spør brukeren om tillegg
 5. Bestem områder/sider (auto-clustering)
 6. Velg branding (kommunens nettside eller standard)
-7. Kartfliser (CARTO Voyager tiles — ingen SVG-generering nødvendig)
+7. Kartfliser (OpenStreetMap-fliser — ingen SVG-generering nødvendig)
 8. Bygg HTML-en med templates/kart_template.html + scripts/build_html.py
 9. Lever ferdig fil
 ```
@@ -338,7 +338,6 @@ Templaten bruker en **fast-skala-motor** som sikrer konsistent zoom på tvers av
 - **Låst zoom 16.0** — både inset og single_map bruker ALLTID nøyaktig zoom 16.0 (Vadsø-standarden, ~0.817 m/px ved lat 70°). Zoomen trappes aldri ned; POIs som ikke får plass i synsfeltet rendres som pilmarkører med km-avstand ved kanten. Dette garanterer identisk detaljnivå og gatenavn-lesbarhet på alle kommunekart. **`single_map` leser IKKE `area.zoom`** — feltet ignoreres helt i denne modusen, så du kan ikke zoome et single_map ut ved å sette `zoom`. Trenger du et mer utzoomet bilde, er det et signal om at kartet skal være overview+inset i stedet (der styrer `area.bounds`/`area.zoom` oversiktskartet).
 - **Auto-rotasjon** — prøver alle vinkler ±90° fra nord (aldri opp-ned). For hver vinkel telles hvor mange POIs som faller innenfor synsfelt-rektangelet i meter-rom. Vinkelen med flest POIs vinner; ved likt antall velges den med tettest bounding-box.
 - **Pikselbasert synlighetssjekk** — `map.getBounds().contains()` er upålitelig med roterte kart. Templaten bruker `map.latLngToContainerPoint()` for å sjekke om et punkt faktisk er synlig.
-- **Retina-tiles** — bruker `{r}` i tile-URL for skarpe gatenavn på HiDPI/Retina-skjermer.
 - **4-retnings pilmarkører** — POIs utenfor kartet får pil (↑↓←→) som peker mot faktisk posisjon. Gjelder BÅDE single_map-modus OG oversiktskartet i overview+inset.
 - **Kant-de-overlap** — pilmarkører skyves fra hverandre i pikselrom (min 24px avstand) så de ikke overlapper.
 - **Målestokk-bar** — beregnes fra mpp (meters per pixel) ved referanse-zoom.
@@ -460,13 +459,17 @@ Brand-JSON-strukturen er:
 
 ## Trinn 7: Kartfliser (tiles)
 
-Kartet bruker **Leaflet med CARTO Voyager-fliser** som kartbakgrunn. Dette gir OSM sine native stiler med lesbare gatenavn og korrekt kystlinje/vann ved alle zoom-nivåer, med retina-støtte via `{r}` i tile-URL-en. Du trenger ikke generere noe kartbakgrunn selv.
+Kartet bruker **Leaflet med OpenStreetMaps egne fliser** (`tile.openstreetmap.org`) som kartbakgrunn. Dette gir lesbare gatenavn og korrekt kystlinje/vann ved alle zoom-nivåer, uten API-nøkkel eller konto. Du trenger ikke generere noe kartbakgrunn selv.
 
-Tile-URL: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png`
+Tile-URL: `https://tile.openstreetmap.org/{z}/{x}/{y}.png` (maks native zoom 19; høyere zoom skaleres opp med `maxNativeZoom: 19`)
 
 Templaten legger på et nesten nøytralt filter (`saturate(0.92) brightness(1.02)`) — samme som Vadsø-kartet. Ikke legg på sepia eller kraftigere desaturering; det visker ut kontrasten mellom gater og bygninger og gjør kartet utvasket.
 
-Merk: flisene lastes fra CARTO sin tile-server, så HTML-en krever internettforbindelse ved første visning (flisene caches i nettleseren).
+Merk: flisene lastes fra OpenStreetMap, så HTML-en krever internettforbindelse ved første visning (flisene caches i nettleseren).
+
+**Ikke bytt tilbake til CARTO-fliser (`basemaps.cartocdn.com`)** — de krever nå API-nøkkel og viser vannmerket «API KEY REQUIRED» på hele kartet. Andre leverandører med API-nøkkel (MapTiler m.fl.) er heller ikke et alternativ for en åpen skill brukeren ikke skal trenge å registrere seg for.
+
+**Bruksvilkår:** OSMs offentlige tile-server er ment for moderat bruk. Kartene her er statiske sider med lav trafikk og riktig kreditering (`© OpenStreetMap`), som er innenfor. Får et kart høy trafikk, bør fliser serveres selv eller via en leverandør — se <https://operations.osmfoundation.org/policies/tiles/>.
 
 ## Trinn 8: Bygg HTML-en
 
@@ -534,7 +537,7 @@ python3 scripts/build_html.py \
 Templaten håndterer:
 
 - Print-CSS (A4 portrett, 10 mm margins, page-break mellom områder)
-- **Leaflet-kart med CARTO Voyager-tiles** (OSM native stiler, lesbare gatenavn)
+- **Leaflet-kart med OpenStreetMap-fliser** (lesbare gatenavn, ingen API-nøkkel)
 - Fast-skala-motor med låst zoom 16.0 og auto-rotasjon
 - Pikselbasert synlighetssjekk for POIs
 - 4-retnings pilmarkører (↑↓←→) for POIs utenfor synsfelt, med automatisk de-overlap
