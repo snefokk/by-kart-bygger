@@ -64,12 +64,12 @@ python3 scripts/brreg_lookup.py "Bedriftsnavn" --kommune Vadsø
 
 ## Eksempler
 
-Kart bygget med skillen — se hele katalogen på **[kart.snefokk.com](https://kart.snefokk.com/)**:
+Kart bygget med skillen — se alle på **[snefokk.com/kart](https://snefokk.com/kart/#eksempler)**:
 
-- [Vadsø](https://vadsoby.com/turistkart/)
-- [Båtsfjord](https://kart.snefokk.com/batsfjord/)
-- [Vardø](https://kart.snefokk.com/vardo/)
-- [Berlevåg](https://kart.snefokk.com/berlevag/)
+- [Vadsø](https://vadsoby.com/visit-vadso/turistkart/)
+- [Båtsfjord](https://snefokk.com/kart/batsfjord/)
+- [Vardø](https://snefokk.com/kart/vardo/)
+- [Berlevåg](https://snefokk.com/kart/berlevag/)
 
 ## Lisens
 
