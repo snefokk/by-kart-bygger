@@ -650,6 +650,12 @@
   }
   .snefokk-footer a { color: var(--brand-accent); text-decoration: none; font-weight: 500; }
   .snefokk-footer a:hover { text-decoration: underline; }
+  /* «Tilbake»-lenke øverst (valgfri: config.tilbake_url) — f.eks. «← Alle kart» på kart.snefokk.com */
+  .tilbake-nav { max-width: 210mm; margin: 3mm auto 0; padding: 0 10mm;
+    font-family: var(--brand-font); font-size: 10pt; font-weight: 500; }
+  .tilbake-nav a { color: var(--brand-accent); text-decoration: none; }
+  .tilbake-nav a:hover { text-decoration: underline; }
+  @media print { .tilbake-nav { display: none !important; } }
 </style>
 </head>
 <body>
@@ -671,6 +677,15 @@
 
 <script>
 const CONFIG = __CONFIG_JSON__;
+if (CONFIG.tilbake_url) {
+  const nav = document.createElement('nav');
+  nav.className = 'tilbake-nav';
+  const a = document.createElement('a');
+  a.href = CONFIG.tilbake_url;
+  a.textContent = CONFIG.tilbake_tekst || '\u2190 Tilbake';
+  nav.appendChild(a);
+  document.body.insertBefore(nav, document.getElementById('root'));
+}
 
 /* "standard"-valget i skillen: Snefokks egen stil (krem, lilla aksent,
    Newsreader-tittel, dempet POI-palett). Aktiveres når brand.style === 'snefokk'. */
