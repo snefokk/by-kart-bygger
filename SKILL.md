@@ -551,6 +551,8 @@ Templaten håndterer:
 - Norsk + engelsk parallellkolonne i legend
 - «Marker din adresse»-funksjon — sluttbrukere kan markere en valgfri adresse på kartet (se Spesialtilfeller)
 - «Kart av / Map by»-credit med Snefokk-logo under QR-koden i legend-kolonnen (samme plassering som Vadsø-kartet) — logoen er innebygd som inline SVG i malen, krever ingen konfigurasjon og ingen bildefiler. Logoen er lenket til `https://snefokk.com/kart/` (åpnes i ny fane på skjerm/PDF; lenken er usynlig ved print). Ordlyden «Kart av» (ikke «Laget av») er bevisst: Snefokk tilrettelegger/setter opp punktene på eksisterende kartdata — selve kartflisene er © OpenStreetMap © CARTO, kreditert i kartets hjørne.
+- **Standard bunntekst på hvert kartark** (alltid med, ikke noe som skal fjernes eller omformuleres): *«Dersom du vil ha endringer til dette kartet, eller ønsker et eget kart over et annet tettsted — besøk snefokk.com/kart»*, lenket til `https://snefokk.com/kart/`. Teksten ligger i malen (`.snefokk-footer`), ikke i config.
+- Valgfritt `"snefokk_logo": false` i config-en utelater «Kart av / Map by»-logoen (standard er at den er med). Brukes på kart.snefokk.com, der logoen er overflødig fordi siden allerede ligger hos Snefokk — bunnteksten over står uansett.
 
 **Etter bygging — sjekk QR-koden:** Åpne HTML-en i nettleser og se i DevTools-konsollen etter `[qr-sjekk] OK`. Står det `FEIL`, vises også et rødt varsel under QR-koden på siden — da må QR-en fikses (sjekk `qr_url` i config-en) før levering.
 
